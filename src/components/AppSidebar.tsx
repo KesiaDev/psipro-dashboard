@@ -6,6 +6,9 @@ import {
   MessageSquare,
   Settings,
   Brain,
+  Building2,
+  UserCheck,
+  DollarSign,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -24,9 +27,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const mainNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Clínicas", url: "/clinics", icon: Building2 },
+  { title: "Profissionais", url: "/psychologists", icon: UserCheck },
   { title: "Pacientes", url: "/patients", icon: Users },
   { title: "Agenda", url: "/calendar", icon: CalendarDays },
   { title: "Sessões", url: "/sessions", icon: MessageSquare },
+  { title: "Financeiro", url: "/financials", icon: DollarSign },
   { title: "Relatórios", url: "/reports", icon: FileText },
 ];
 

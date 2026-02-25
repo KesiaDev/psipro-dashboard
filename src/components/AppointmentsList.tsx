@@ -44,7 +44,7 @@ export function AppointmentsList() {
             className="flex items-center gap-4 rounded-xl border border-border p-3.5 transition-colors hover:bg-muted/50"
           >
             <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">
+              <AvatarFallback className="gold-gradient text-primary-foreground text-xs font-semibold">
                 {apt.initials}
               </AvatarFallback>
             </Avatar>

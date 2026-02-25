@@ -6,8 +6,6 @@ import {
   MessageSquare,
   Settings,
   Brain,
-  LogOut,
-  Bell,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -41,7 +39,7 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="p-6 pb-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl gold-gradient">
             <Brain className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
@@ -53,7 +51,7 @@ export function AppSidebar() {
 
       <SidebarContent className="px-3">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <SidebarGroupLabel className="px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             Menu
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -97,7 +95,7 @@ export function AppSidebar() {
         </SidebarMenu>
         <div className="mt-3 flex items-center gap-3 rounded-xl bg-secondary p-3">
           <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
+            <AvatarFallback className="gold-gradient text-primary-foreground text-sm font-semibold">
               MC
             </AvatarFallback>
           </Avatar>

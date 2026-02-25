@@ -11,10 +11,10 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full dark-gradient">
         <AppSidebar />
         <div className="flex flex-1 flex-col">
-          <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
+          <header className="flex h-16 items-center justify-between border-b border-border bg-card/50 backdrop-blur-sm px-6">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
               <h2 className="font-heading text-lg font-semibold text-foreground">{title}</h2>
@@ -25,7 +25,7 @@ export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayo
               </Button>
               <Button variant="ghost" size="icon" className="relative rounded-xl text-muted-foreground hover:text-foreground">
                 <Bell className="h-[18px] w-[18px]" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary" />
               </Button>
             </div>
           </header>

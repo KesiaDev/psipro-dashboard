@@ -67,6 +67,11 @@ export default {
           amber: "hsl(var(--chart-amber))",
           rose: "hsl(var(--chart-rose))",
         },
+        gold: {
+          DEFAULT: "hsl(var(--gold))",
+          light: "hsl(var(--gold-light))",
+          dark: "hsl(var(--gold-dark))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

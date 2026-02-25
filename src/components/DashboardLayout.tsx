@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ClinicSelector } from "@/components/ClinicSelector";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayo
               <h2 className="font-heading text-lg font-semibold text-foreground">{title}</h2>
             </div>
             <div className="flex items-center gap-2">
+              <ClinicSelector />
               <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
                 <Search className="h-[18px] w-[18px]" />
               </Button>

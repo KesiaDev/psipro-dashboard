@@ -6,7 +6,7 @@ interface PsiProLogoProps {
 }
 
 export function PsiProLogo({ className = "", size = "md" }: PsiProLogoProps) {
-  const heights = { sm: "h-8", md: "h-12", lg: "h-16" };
+  const heights = { sm: "h-12", md: "h-20", lg: "h-28" };
 
   return (
     <img

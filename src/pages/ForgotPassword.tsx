@@ -5,15 +5,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Mail } from "lucide-react";
 import { PsiProLogo } from "@/components/PsiProLogo";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const ForgotPassword = () => {
   const [sent, setSent] = useState(false);
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { resetPassword } = useAuth();
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await resetPassword(email);
+    setLoading(false);
+    if (error) {
+      toast({ title: "Erro ao enviar e-mail", description: error.message, variant: "destructive" });
+    } else {
+      setSent(true);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
-        {/* Logo */}
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-6">
             <PsiProLogo size="lg" />
@@ -28,7 +44,6 @@ const ForgotPassword = () => {
           </p>
         </div>
 
-        {/* Form */}
         <div className="glass-card p-8 space-y-6">
           {sent ? (
             <div className="flex flex-col items-center py-4">
@@ -47,7 +62,7 @@ const ForgotPassword = () => {
               </Button>
             </div>
           ) : (
-            <>
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label className="text-sm text-muted-foreground">E-mail</Label>
                 <Input
@@ -56,20 +71,20 @@ const ForgotPassword = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="input-premium h-11"
+                  required
                 />
               </div>
               <Button
                 variant="gold"
                 className="w-full h-11 rounded-xl text-sm font-semibold"
-                onClick={() => setSent(true)}
+                disabled={loading}
               >
-                Enviar Link de Recuperação
+                {loading ? "Enviando..." : "Enviar Link de Recuperação"}
               </Button>
-            </>
+            </form>
           )}
         </div>
 
-        {/* Footer */}
         <Link
           to="/login"
           className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"

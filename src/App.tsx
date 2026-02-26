@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ClinicProvider } from "@/contexts/ClinicContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import Patients from "./pages/Patients";
@@ -14,6 +16,7 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Clinics from "./pages/Clinics";
 import Psychologists from "./pages/Psychologists";
 import Financials from "./pages/Financials";
@@ -25,28 +28,30 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <TooltipProvider>
-        <ClinicProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/clinics" element={<Clinics />} />
-              <Route path="/psychologists" element={<Psychologists />} />
-              <Route path="/financials" element={<Financials />} />
-              <Route path="/patients" element={<Patients />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/sessions" element={<Sessions />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </ClinicProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <ClinicProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/clinics" element={<ProtectedRoute><Clinics /></ProtectedRoute>} />
+                <Route path="/psychologists" element={<ProtectedRoute><Psychologists /></ProtectedRoute>} />
+                <Route path="/financials" element={<ProtectedRoute><Financials /></ProtectedRoute>} />
+                <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
+                <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+                <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
+                <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ClinicProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

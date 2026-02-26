@@ -5,13 +5,13 @@ import {
   FileText,
   MessageSquare,
   Settings,
-  Brain,
   Building2,
   UserCheck,
   DollarSign,
   LogOut,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import logoPsiPro from "@/assets/logo-psipro.png";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -53,13 +53,7 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="p-6 pb-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl gold-gradient">
-            <Brain className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="font-heading text-lg font-bold text-foreground">PsiPro</h1>
-            <p className="text-xs text-muted-foreground">Plataforma Clínica</p>
-          </div>
+          <img src={logoPsiPro} alt="PsiPro" className="h-10 object-contain" />
         </div>
       </SidebarHeader>
 

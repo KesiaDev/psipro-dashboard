@@ -10,7 +10,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="dark min-h-screen dark-gradient flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         {/* Logo */}
         <div className="text-center space-y-2">

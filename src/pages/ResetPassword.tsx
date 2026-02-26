@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,23 +8,39 @@ import { PsiProLogo } from "@/components/PsiProLogo";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-const Login = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
+const ResetPassword = () => {
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { updatePassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.includes("type=recovery")) {
+      // Not a valid recovery link — but let user stay, they might have a valid session
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast({ title: "As senhas não coincidem", variant: "destructive" });
+      return;
+    }
+    if (password.length < 8) {
+      toast({ title: "A senha deve ter pelo menos 8 caracteres", variant: "destructive" });
+      return;
+    }
     setLoading(true);
-    const { error } = await signIn(email, password);
+    const { error } = await updatePassword(password);
     setLoading(false);
     if (error) {
-      toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao redefinir senha", description: error.message, variant: "destructive" });
     } else {
+      toast({ title: "Senha redefinida com sucesso!" });
       navigate("/");
     }
   };
@@ -36,33 +52,18 @@ const Login = () => {
           <div className="flex justify-center mb-6">
             <PsiProLogo size="lg" />
           </div>
-          <p className="text-sm text-muted-foreground">Acesse sua plataforma clínica</p>
+          <h1 className="font-heading text-3xl font-bold text-foreground">Nova Senha</h1>
+          <p className="text-sm text-muted-foreground">Defina sua nova senha abaixo.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="glass-card p-8 space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">E-mail</Label>
-              <Input
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-premium h-11"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm text-muted-foreground">Senha</Label>
-                <Link to="/forgot-password" className="text-xs text-primary hover:text-primary/80 transition-colors">
-                  Esqueceu a senha?
-                </Link>
-              </div>
+              <Label className="text-sm text-muted-foreground">Nova Senha</Label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder="Mínimo 8 caracteres"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="input-premium h-11 pr-10"
@@ -77,22 +78,25 @@ const Login = () => {
                 </button>
               </div>
             </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Confirmar Senha</Label>
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Repita a senha"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="input-premium h-11"
+                required
+              />
+            </div>
           </div>
-
           <Button variant="gold" className="w-full h-11 rounded-xl text-sm font-semibold" disabled={loading}>
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? "Salvando..." : "Redefinir Senha"}
           </Button>
         </form>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Não tem uma conta?{" "}
-          <Link to="/register" className="text-primary hover:text-primary/80 font-medium transition-colors">
-            Criar conta
-          </Link>
-        </p>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default ResetPassword;

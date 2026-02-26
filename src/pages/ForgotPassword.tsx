@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Mail } from "lucide-react";
-import logoPsiPro from "@/assets/logo-psipro.png";
+import { PsiProLogo } from "@/components/PsiProLogo";
 
 const ForgotPassword = () => {
   const [sent, setSent] = useState(false);
@@ -16,7 +16,7 @@ const ForgotPassword = () => {
         {/* Logo */}
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-6">
-            <img src={logoPsiPro} alt="PsiPro" className="h-16 object-contain" />
+            <PsiProLogo size="lg" />
           </div>
           <h1 className="font-heading text-3xl font-bold text-foreground">
             {sent ? "E-mail Enviado" : "Recuperar Senha"}

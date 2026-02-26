@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClinicSelector } from "@/components/ClinicSelector";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -12,7 +13,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full dark-gradient">
+      <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
         <div className="flex flex-1 flex-col">
           <header className="flex h-16 items-center justify-between border-b border-border bg-card/50 backdrop-blur-sm px-6">
@@ -22,6 +23,7 @@ export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayo
             </div>
             <div className="flex items-center gap-2">
               <ClinicSelector />
+              <ThemeToggle />
               <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
                 <Search className="h-[18px] w-[18px]" />
               </Button>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
-import logoPsiPro from "@/assets/logo-psipro.png";
+import { PsiProLogo } from "@/components/PsiProLogo";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,7 +15,7 @@ const Register = () => {
         {/* Logo */}
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-6">
-            <img src={logoPsiPro} alt="PsiPro" className="h-16 object-contain" />
+            <PsiProLogo size="lg" />
           </div>
           <h1 className="font-heading text-3xl font-bold text-foreground">Criar Conta</h1>
           <p className="text-sm text-muted-foreground">Comece a usar o PsiPro gratuitamente</p>

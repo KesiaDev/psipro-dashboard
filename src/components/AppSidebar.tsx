@@ -11,7 +11,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import logoPsiPro from "@/assets/logo-psipro.png";
+import { PsiProLogo } from "@/components/PsiProLogo";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -53,7 +53,7 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="p-6 pb-4">
         <div className="flex items-center gap-3">
-          <img src={logoPsiPro} alt="PsiPro" className="h-10 object-contain" />
+          <PsiProLogo size="sm" />
         </div>
       </SidebarHeader>
 

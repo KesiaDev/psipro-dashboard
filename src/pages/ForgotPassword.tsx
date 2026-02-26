@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Brain, ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, Mail } from "lucide-react";
+import logoPsiPro from "@/assets/logo-psipro.png";
 
 const ForgotPassword = () => {
   const [sent, setSent] = useState(false);
@@ -15,9 +16,7 @@ const ForgotPassword = () => {
         {/* Logo */}
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-6">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl gold-gradient shadow-lg shadow-primary/20">
-              <Brain className="h-7 w-7 text-primary-foreground" />
-            </div>
+            <img src={logoPsiPro} alt="PsiPro" className="h-16 object-contain" />
           </div>
           <h1 className="font-heading text-3xl font-bold text-foreground">
             {sent ? "E-mail Enviado" : "Recuperar Senha"}

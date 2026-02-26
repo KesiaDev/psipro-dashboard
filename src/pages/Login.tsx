@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Brain, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
+import logoPsiPro from "@/assets/logo-psipro.png";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,11 +17,8 @@ const Login = () => {
         {/* Logo */}
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-6">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl gold-gradient shadow-lg shadow-primary/20">
-              <Brain className="h-7 w-7 text-primary-foreground" />
-            </div>
+            <img src={logoPsiPro} alt="PsiPro" className="h-16 object-contain" />
           </div>
-          <h1 className="font-heading text-3xl font-bold text-foreground">PsiPro</h1>
           <p className="text-sm text-muted-foreground">Acesse sua plataforma clínica</p>
         </div>
 

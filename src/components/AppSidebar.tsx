@@ -9,7 +9,9 @@ import {
   Building2,
   UserCheck,
   DollarSign,
+  LogOut,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -41,6 +43,12 @@ const bottomNav = [
 ];
 
 export function AppSidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    navigate("/login");
+  };
+
   return (
     <Sidebar className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="p-6 pb-4">
@@ -109,6 +117,13 @@ export function AppSidebar() {
             <p className="text-sm font-medium text-foreground truncate">Dra. Maria Costa</p>
             <p className="text-xs text-muted-foreground truncate">CRP 06/12345</p>
           </div>
+          <button
+            onClick={handleLogout}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </SidebarFooter>
     </Sidebar>

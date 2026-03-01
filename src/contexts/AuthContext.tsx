@@ -91,7 +91,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await api.post("/auth/register", {
         email,
         password,
-        ...metadata,
+        firstName: metadata.first_name,
+        lastName: metadata.last_name,
+        crp: metadata.crp,
       });
       return { error: null };
     } catch (err) {

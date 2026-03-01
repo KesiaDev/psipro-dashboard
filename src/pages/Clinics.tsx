@@ -11,9 +11,33 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ErrorState } from "@/components/ErrorState";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 
 const Clinics = () => {
-  const { clinics, userRole } = useClinic();
+  const { clinics, userRole, loading, error, refetch } = useClinic();
+
+  if (error) {
+    const err = error as { status?: number; message?: string };
+    return (
+      <DashboardLayout title="Clínicas">
+        <ErrorState
+          title={err.status === 401 ? "Sessão expirada" : err.status === 403 ? "Acesso negado" : "Erro ao carregar clínicas"}
+          message={err.message ?? "Não foi possível carregar os dados."}
+          status={err.status}
+          onRetry={refetch}
+        />
+      </DashboardLayout>
+    );
+  }
+
+  if (loading && clinics.length === 0) {
+    return (
+      <DashboardLayout title="Clínicas">
+        <LoadingSkeleton variant="page" />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Clínicas">

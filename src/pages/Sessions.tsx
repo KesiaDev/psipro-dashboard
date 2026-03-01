@@ -4,32 +4,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, FileText, Clock, Calendar, ChevronRight } from "lucide-react";
-
-interface Session {
-  id: number;
-  patient: string;
-  initials: string;
-  date: string;
-  time: string;
-  duration: string;
-  type: string;
-  status: "completed" | "scheduled" | "cancelled" | "in-progress";
-  notes: boolean;
-}
-
-const sessions: Session[] = [
-  { id: 1, patient: "Ana Souza", initials: "AS", date: "25 Fev 2026", time: "09:00", duration: "50 min", type: "Terapia Individual", status: "completed", notes: true },
-  { id: 2, patient: "Carlos Lima", initials: "CL", date: "25 Fev 2026", time: "10:30", duration: "50 min", type: "Avaliação Inicial", status: "completed", notes: true },
-  { id: 3, patient: "Beatriz Ferreira", initials: "BF", date: "25 Fev 2026", time: "14:00", duration: "1h 20min", type: "Terapia de Casal", status: "in-progress", notes: false },
-  { id: 4, patient: "Diego Santos", initials: "DS", date: "25 Fev 2026", time: "15:30", duration: "50 min", type: "Terapia Individual", status: "scheduled", notes: false },
-  { id: 5, patient: "Fernanda Oliveira", initials: "FO", date: "25 Fev 2026", time: "17:00", duration: "50 min", type: "Retorno", status: "scheduled", notes: false },
-  { id: 6, patient: "Helena Costa", initials: "HC", date: "24 Fev 2026", time: "09:00", duration: "50 min", type: "Terapia Individual", status: "completed", notes: true },
-  { id: 7, patient: "Igor Almeida", initials: "IA", date: "24 Fev 2026", time: "10:30", duration: "1h 20min", type: "Avaliação Inicial", status: "completed", notes: true },
-  { id: 8, patient: "Gabriel Mendes", initials: "GM", date: "24 Fev 2026", time: "14:00", duration: "50 min", type: "Terapia Individual", status: "cancelled", notes: false },
-  { id: 9, patient: "Ana Souza", initials: "AS", date: "23 Fev 2026", time: "09:00", duration: "50 min", type: "Terapia Individual", status: "completed", notes: true },
-  { id: 10, patient: "Diego Santos", initials: "DS", date: "23 Fev 2026", time: "15:30", duration: "50 min", type: "Terapia Individual", status: "completed", notes: true },
-];
+import { Search, Plus, FileText, Clock, Calendar } from "lucide-react";
+import { useSessionsData } from "@/hooks/useSessionsData";
+import { ErrorState } from "@/components/ErrorState";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   completed: { label: "Concluída", className: "bg-accent text-accent-foreground" },
@@ -41,6 +19,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 const Sessions = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
+  const { sessions, loading, error, refetch } = useSessionsData();
 
   const filtered = sessions.filter((s) => {
     const matchesSearch = s.patient.toLowerCase().includes(search.toLowerCase());
@@ -48,12 +27,33 @@ const Sessions = () => {
     return matchesSearch && matchesFilter;
   });
 
-  // Group by date
-  const grouped = filtered.reduce<Record<string, Session[]>>((acc, session) => {
+  const grouped = filtered.reduce<Record<string, typeof filtered>>((acc, session) => {
     if (!acc[session.date]) acc[session.date] = [];
     acc[session.date].push(session);
     return acc;
   }, {});
+
+  if (error) {
+    const err = error as { status?: number; message?: string };
+    return (
+      <DashboardLayout title="Sessões">
+        <ErrorState
+          title={err.status === 401 ? "Sessão expirada" : err.status === 403 ? "Acesso negado" : "Erro ao carregar sessões"}
+          message={err.message ?? "Não foi possível carregar os dados."}
+          status={err.status}
+          onRetry={refetch}
+        />
+      </DashboardLayout>
+    );
+  }
+
+  if (loading && sessions.length === 0) {
+    return (
+      <DashboardLayout title="Sessões">
+        <LoadingSkeleton variant="list" />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Sessões">
@@ -90,66 +90,71 @@ const Sessions = () => {
                 className="rounded-xl text-xs"
                 onClick={() => setFilter(f)}
               >
-                {f === "all" ? "Todas" : statusConfig[f]?.label}
+                {f === "all" ? "Todas" : statusConfig[f]?.label ?? f}
               </Button>
             ))}
           </div>
         </div>
 
         {/* Sessions grouped by date */}
-        <div className="space-y-6">
-          {Object.entries(grouped).map(([date, dateSessions]) => (
-            <div key={date} className="animate-fade-in">
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="h-4 w-4 text-primary" />
-                <h3 className="font-heading text-sm font-semibold text-foreground">{date}</h3>
-                <span className="text-xs text-muted-foreground">({dateSessions.length} sessões)</span>
-              </div>
-              <div className="grid gap-2">
-                {dateSessions.map((session) => (
-                  <div
-                    key={session.id}
-                    className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group"
-                  >
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="gold-gradient text-primary-foreground text-xs font-semibold">
-                        {session.initials}
-                      </AvatarFallback>
-                    </Avatar>
+        {Object.keys(grouped).length === 0 ? (
+          <div className="card-soft p-12 text-center">
+            <p className="text-muted-foreground">Nenhuma sessão encontrada.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {Object.entries(grouped).map(([date, dateSessions]) => (
+              <div key={date} className="animate-fade-in">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <h3 className="font-heading text-sm font-semibold text-foreground">{date}</h3>
+                  <span className="text-xs text-muted-foreground">({dateSessions.length} sessões)</span>
+                </div>
+                <div className="grid gap-2">
+                  {dateSessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group"
+                    >
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="gold-gradient text-primary-foreground text-xs font-semibold">
+                          {session.initials}
+                        </AvatarFallback>
+                      </Avatar>
 
-                    <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{session.patient}</p>
-                        <p className="text-xs text-muted-foreground">{session.type}</p>
-                      </div>
+                      <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{session.patient}</p>
+                          <p className="text-xs text-muted-foreground">{session.type}</p>
+                        </div>
 
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5" />
-                        <span className="text-sm">{session.time}</span>
-                        <span className="text-xs">· {session.duration}</span>
-                      </div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5" />
+                          <span className="text-sm">{session.time}</span>
+                          <span className="text-xs">· {session.duration}</span>
+                        </div>
 
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className={`rounded-lg text-[10px] px-2 py-0.5 ${statusConfig[session.status].className}`}>
-                          {statusConfig[session.status].label}
-                        </Badge>
-                        {session.notes && (
-                          <span className="flex items-center gap-1 text-xs text-primary">
-                            <FileText className="h-3 w-3" /> Notas
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex justify-end">
-                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            className={`rounded-lg text-[10px] px-2 py-0.5 ${statusConfig[session.status]?.className ?? ""}`}
+                          >
+                            {statusConfig[session.status]?.label ?? session.status}
+                          </Badge>
+                          {session.notes && (
+                            <span className="flex items-center gap-1 text-xs text-primary">
+                              <FileText className="h-3 w-3" /> Notas
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

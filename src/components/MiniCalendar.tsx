@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useMiniCalendarDays } from "@/hooks/useMiniCalendarDays";
 
 const DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MONTHS = [
@@ -8,14 +9,17 @@ const MONTHS = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
 
-// Days with appointments (mock)
-const appointmentDays = [3, 7, 10, 14, 18, 21, 25, 28];
-
 export function MiniCalendar() {
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 1, 25)); // Feb 25, 2026
-  const today = 25;
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const { daysWithAppointments, loading, refetch } = useMiniCalendarDays();
+
+  const today = new Date().getDate();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
+
+  useEffect(() => {
+    refetch(currentYear, currentMonth);
+  }, [currentYear, currentMonth, refetch]);
 
   const firstDay = new Date(currentYear, currentMonth, 1).getDay();
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -42,36 +46,40 @@ export function MiniCalendar() {
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        {DAYS.map((day) => (
-          <div key={day} className="py-2 text-center text-[11px] font-medium text-muted-foreground">
-            {day}
-          </div>
-        ))}
-        {blanks.map((b) => (
-          <div key={`blank-${b}`} />
-        ))}
-        {days.map((day) => {
-          const isToday = day === today && currentMonth === 1;
-          const hasAppointment = appointmentDays.includes(day);
-          return (
-            <button
-              key={day}
-              className={`relative flex h-9 w-full items-center justify-center rounded-lg text-sm transition-colors
-                ${isToday
-                  ? "bg-primary font-semibold text-primary-foreground"
-                  : "text-foreground hover:bg-muted"
-                }
-              `}
-            >
+      {loading ? (
+        <div className="h-48 animate-pulse bg-muted/30 rounded-lg" />
+      ) : (
+        <div className="grid grid-cols-7 gap-1">
+          {DAYS.map((day) => (
+            <div key={day} className="py-2 text-center text-[11px] font-medium text-muted-foreground">
               {day}
-              {hasAppointment && !isToday && (
-                <span className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />
-              )}
-            </button>
-          );
-        })}
-      </div>
+            </div>
+          ))}
+          {blanks.map((b) => (
+            <div key={`blank-${b}`} />
+          ))}
+          {days.map((day) => {
+            const isToday = day === today && currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear();
+            const hasAppointment = daysWithAppointments.includes(day);
+            return (
+              <button
+                key={day}
+                className={`relative flex h-9 w-full items-center justify-center rounded-lg text-sm transition-colors
+                  ${isToday
+                    ? "bg-primary font-semibold text-primary-foreground"
+                    : "text-foreground hover:bg-muted"
+                  }
+                `}
+              >
+                {day}
+                {hasAppointment && !isToday && (
+                  <span className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

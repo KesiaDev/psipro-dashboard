@@ -8,6 +8,7 @@ import { DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Receipt, CreditCa
 import { useFinancialRecords } from "@/hooks/useFinancialRecords";
 import { usePatients } from "@/hooks/usePatients";
 import { AddFinancialRecordDialog } from "@/components/financials/AddFinancialRecordDialog";
+import { ErrorState } from "@/components/ErrorState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -44,8 +45,22 @@ const formatCurrency = (value: number) =>
 
 const Financials = () => {
   const { selectedClinic, userRole } = useClinic();
-  const { records, loading, addRecord, updateRecord, deleteRecord, stats } = useFinancialRecords();
+  const { records, loading, error, addRecord, updateRecord, deleteRecord, stats, refetch } = useFinancialRecords();
   const { patients } = usePatients();
+
+  if (error) {
+    const err = error as { status?: number; message?: string };
+    return (
+      <DashboardLayout title="Financeiro">
+        <ErrorState
+          title={err.status === 401 ? "Sessão expirada" : err.status === 403 ? "Acesso negado" : "Erro ao carregar financeiro"}
+          message={err.message ?? "Não foi possível carregar os dados."}
+          status={err.status}
+          onRetry={refetch}
+        />
+      </DashboardLayout>
+    );
+  }
 
   if (userRole === "psychologist") {
     return (

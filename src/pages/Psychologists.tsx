@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { PageContainer } from "@/components/PageContainer";
 import { useClinic } from "@/contexts/ClinicContext";
@@ -13,16 +14,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
-
-const mockProfessionals = [
-  { id: "1", name: "Dra. Maria Costa", crp: "CRP 06/12345", specialty: "Terapia Cognitivo-Comportamental", email: "maria@psipro.com.br", phone: "(11) 99000-1111", avatar: "MC", status: "active" as const, patientsCount: 28, sessionsThisMonth: 45, clinicId: "1" },
-  { id: "2", name: "Dr. Rafael Mendes", crp: "CRP 06/23456", specialty: "Psicanálise", email: "rafael@psipro.com.br", phone: "(11) 99000-2222", avatar: "RM", status: "active" as const, patientsCount: 22, sessionsThisMonth: 38, clinicId: "1" },
-  { id: "3", name: "Dra. Ana Oliveira", crp: "CRP 06/34567", specialty: "Neuropsicologia", email: "ana@psipro.com.br", phone: "(11) 99000-3333", avatar: "AO", status: "active" as const, patientsCount: 18, sessionsThisMonth: 30, clinicId: "1" },
-  { id: "4", name: "Dr. Carlos Lima", crp: "CRP 06/45678", specialty: "Psicologia Infantil", email: "carlos@psipro.com.br", phone: "(11) 99000-4444", avatar: "CL", status: "vacation" as const, patientsCount: 15, sessionsThisMonth: 0, clinicId: "1" },
-  { id: "5", name: "Dra. Julia Santos", crp: "CRP 06/56789", specialty: "Terapia de Casal", email: "julia@psipro.com.br", phone: "(11) 99000-5555", avatar: "JS", status: "active" as const, patientsCount: 20, sessionsThisMonth: 32, clinicId: "2" },
-  { id: "6", name: "Dr. Pedro Alves", crp: "CRP 06/67890", specialty: "Terapia Cognitivo-Comportamental", email: "pedro@psipro.com.br", phone: "(19) 99000-6666", avatar: "PA", status: "active" as const, patientsCount: 12, sessionsThisMonth: 20, clinicId: "3" },
-];
+import { useProfessionals } from "@/hooks/useProfessionals";
+import { ErrorState } from "@/components/ErrorState";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 
 const statusMap = {
   active: { label: "Ativo", variant: "confirmed" as const },
@@ -33,15 +27,41 @@ const statusMap = {
 const Psychologists = () => {
   const { selectedClinic, userRole } = useClinic();
   const [search, setSearch] = useState("");
+  const { professionals, loading, error, refetch } = useProfessionals(selectedClinic?.id);
 
-  const professionals = mockProfessionals
-    .filter((p) => p.clinicId === selectedClinic.id)
-    .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()) || p.specialty.toLowerCase().includes(search.toLowerCase()));
+  const filtered = professionals
+    .filter(
+      (p) =>
+        p.name.toLowerCase().includes(search.toLowerCase()) ||
+        p.specialty.toLowerCase().includes(search.toLowerCase())
+    );
+
+  if (error) {
+    const err = error as { status?: number; message?: string };
+    return (
+      <DashboardLayout title="Profissionais">
+        <ErrorState
+          title={err.status === 401 ? "Sessão expirada" : err.status === 403 ? "Acesso negado" : "Erro ao carregar profissionais"}
+          message={err.message ?? "Não foi possível carregar os dados."}
+          status={err.status}
+          onRetry={refetch}
+        />
+      </DashboardLayout>
+    );
+  }
+
+  if (loading && professionals.length === 0) {
+    return (
+      <DashboardLayout title="Profissionais">
+        <LoadingSkeleton variant="list" />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Profissionais">
       <PageContainer
-        title={`Profissionais — ${selectedClinic.name}`}
+        title={`Profissionais — ${selectedClinic?.name ?? "—"}`}
         subtitle="Gerencie os psicólogos vinculados a esta clínica"
         breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Clínicas", href: "/clinics" }, { label: "Profissionais" }]}
         actions={
@@ -66,7 +86,7 @@ const Psychologists = () => {
 
         {/* List */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {professionals.map((prof) => (
+          {filtered.map((prof) => (
             <Card key={prof.id} className="bg-card border-border hover:shadow-lg transition-shadow group">
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
@@ -82,8 +102,8 @@ const Psychologists = () => {
                         <p className="text-xs text-muted-foreground">{prof.crp}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={statusMap[prof.status].variant} className="text-[10px]">
-                          {statusMap[prof.status].label}
+                        <Badge variant={statusMap[prof.status]?.variant ?? "secondary"} className="text-[10px]">
+                          {statusMap[prof.status]?.label ?? prof.status}
                         </Badge>
                         {userRole !== "psychologist" && (
                           <DropdownMenu>
@@ -126,7 +146,7 @@ const Psychologists = () => {
               </CardContent>
             </Card>
           ))}
-          {professionals.length === 0 && (
+          {filtered.length === 0 && (
             <div className="col-span-full py-16 text-center">
               <Users className="mx-auto h-12 w-12 text-muted-foreground/30" />
               <h3 className="mt-4 font-heading text-lg font-semibold text-foreground">Nenhum profissional encontrado</h3>

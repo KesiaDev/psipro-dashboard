@@ -4,32 +4,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Phone, Mail, MoreHorizontal, Filter } from "lucide-react";
-
-interface Patient {
-  id: number;
-  name: string;
-  initials: string;
-  email: string;
-  phone: string;
-  age: number;
-  sessions: number;
-  lastSession: string;
-  nextSession: string | null;
-  status: "active" | "inactive" | "new";
-  progress: "improving" | "stable" | "attention";
-}
-
-const patients: Patient[] = [
-  { id: 1, name: "Ana Souza", initials: "AS", email: "ana@email.com", phone: "(11) 99123-4567", age: 32, sessions: 12, lastSession: "22 Fev 2026", nextSession: "01 Mar 2026", status: "active", progress: "improving" },
-  { id: 2, name: "Carlos Lima", initials: "CL", email: "carlos@email.com", phone: "(11) 98765-4321", age: 45, sessions: 5, lastSession: "20 Fev 2026", nextSession: "27 Fev 2026", status: "active", progress: "stable" },
-  { id: 3, name: "Beatriz Ferreira", initials: "BF", email: "beatriz@email.com", phone: "(11) 91234-5678", age: 28, sessions: 8, lastSession: "18 Fev 2026", nextSession: "25 Fev 2026", status: "active", progress: "attention" },
-  { id: 4, name: "Diego Santos", initials: "DS", email: "diego@email.com", phone: "(11) 97654-3210", age: 38, sessions: 15, lastSession: "21 Fev 2026", nextSession: "28 Fev 2026", status: "active", progress: "improving" },
-  { id: 5, name: "Fernanda Oliveira", initials: "FO", email: "fernanda@email.com", phone: "(11) 93456-7890", age: 29, sessions: 3, lastSession: "19 Fev 2026", nextSession: null, status: "new", progress: "stable" },
-  { id: 6, name: "Gabriel Mendes", initials: "GM", email: "gabriel@email.com", phone: "(11) 92345-6789", age: 41, sessions: 20, lastSession: "15 Fev 2026", nextSession: null, status: "inactive", progress: "stable" },
-  { id: 7, name: "Helena Costa", initials: "HC", email: "helena@email.com", phone: "(11) 94567-8901", age: 35, sessions: 10, lastSession: "23 Fev 2026", nextSession: "02 Mar 2026", status: "active", progress: "improving" },
-  { id: 8, name: "Igor Almeida", initials: "IA", email: "igor@email.com", phone: "(11) 95678-9012", age: 27, sessions: 2, lastSession: "24 Fev 2026", nextSession: "03 Mar 2026", status: "new", progress: "stable" },
-];
+import { Search, Plus, Phone, Mail, MoreHorizontal } from "lucide-react";
+import { usePatients } from "@/hooks/usePatients";
+import { ErrorState } from "@/components/ErrorState";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   active: { label: "Ativo", className: "bg-accent text-accent-foreground" },
@@ -43,15 +22,62 @@ const progressConfig: Record<string, { label: string; dot: string }> = {
   attention: { label: "Atenção", dot: "bg-destructive" },
 };
 
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  try {
+    return new Date(dateStr).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "—";
+  }
+}
+
 const Patients = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const { patients, loading, error, refetch, createPatient } = usePatients();
 
   const filtered = patients.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+    const name = p.full_name ?? p.name ?? "";
+    const matchesSearch = name.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === "all" || p.status === filter;
     return matchesSearch && matchesFilter;
   });
+
+  if (error) {
+    const err = error as { status?: number; message?: string };
+    return (
+      <DashboardLayout title="Pacientes">
+        <ErrorState
+          title={err.status === 401 ? "Sessão expirada" : err.status === 403 ? "Acesso negado" : "Erro ao carregar pacientes"}
+          message={err.message ?? "Não foi possível carregar os dados."}
+          status={err.status}
+          onRetry={refetch}
+        />
+      </DashboardLayout>
+    );
+  }
+
+  if (loading && patients.length === 0) {
+    return (
+      <DashboardLayout title="Pacientes">
+        <LoadingSkeleton variant="list" />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Pacientes">
@@ -62,10 +88,26 @@ const Patients = () => {
             <h1 className="font-heading text-2xl font-bold text-foreground">Pacientes</h1>
             <p className="text-sm text-muted-foreground">{patients.length} pacientes cadastrados</p>
           </div>
-          <Button className="gold-gradient text-primary-foreground rounded-xl gap-2">
-            <Plus className="h-4 w-4" />
-            Novo Paciente
-          </Button>
+          <div className="flex items-center gap-2">
+            <AddPatientDialog
+              open={showAddDialog}
+              onOpenChange={setShowAddDialog}
+              onSave={async (input) => {
+                const created = await createPatient(input);
+                if (created) {
+                  setShowAddDialog(false);
+                }
+                return created;
+              }}
+            />
+            <Button
+              className="gold-gradient text-primary-foreground rounded-xl gap-2"
+              onClick={() => setShowAddDialog(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Novo Paciente
+            </Button>
+          </div>
         </div>
 
         {/* Search & Filters */}
@@ -96,54 +138,77 @@ const Patients = () => {
 
         {/* Patient List */}
         <div className="grid gap-3">
-          {filtered.map((patient, i) => (
-            <div
-              key={patient.id}
-              className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow animate-fade-in"
-              style={{ animationDelay: `${i * 0.05}s` }}
-            >
-              <Avatar className="h-11 w-11">
-                <AvatarFallback className="gold-gradient text-primary-foreground text-sm font-semibold">
-                  {patient.initials}
-                </AvatarFallback>
-              </Avatar>
+          {filtered.length === 0 ? (
+            <div className="card-soft p-12 text-center">
+              <p className="text-muted-foreground">Nenhum paciente encontrado.</p>
+            </div>
+          ) : (
+            filtered.map((patient, i) => (
+              <div
+                key={patient.id}
+                className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow animate-fade-in"
+                style={{ animationDelay: `${i * 0.05}s` }}
+              >
+                <Avatar className="h-11 w-11">
+                  <AvatarFallback className="gold-gradient text-primary-foreground text-sm font-semibold">
+                    {getInitials(patient.full_name ?? patient.name ?? "")}
+                  </AvatarFallback>
+                </Avatar>
 
-              <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4 items-center">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{patient.name}</p>
-                  <p className="text-xs text-muted-foreground">{patient.age} anos · {patient.sessions} sessões</p>
-                </div>
+                <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4 items-center">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {patient.full_name ?? patient.name ?? "—"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {patient.age ?? "—"} anos · {patient.sessions ?? 0} sessões
+                    </p>
+                  </div>
 
-                <div className="hidden sm:block min-w-0">
-                  <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
-                    <Mail className="h-3 w-3" /> {patient.email}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
-                    <Phone className="h-3 w-3" /> {patient.phone}
-                  </p>
-                </div>
+                  <div className="hidden sm:block min-w-0">
+                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                      <Mail className="h-3 w-3" /> {patient.email ?? "—"}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                      <Phone className="h-3 w-3" /> {patient.phone ?? "—"}
+                    </p>
+                  </div>
 
-                <div className="hidden sm:block">
-                  <p className="text-xs text-muted-foreground">Última sessão</p>
-                  <p className="text-sm font-medium text-foreground">{patient.lastSession}</p>
-                </div>
+                  <div className="hidden sm:block">
+                    <p className="text-xs text-muted-foreground">Última sessão</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {formatDate(patient.lastSession ?? patient.last_session_at)}
+                    </p>
+                  </div>
 
-                <div className="flex items-center gap-3">
-                  <Badge variant="secondary" className={`rounded-lg text-[10px] px-2 py-0.5 ${statusConfig[patient.status].className}`}>
-                    {statusConfig[patient.status].label}
-                  </Badge>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`h-2 w-2 rounded-full ${progressConfig[patient.progress].dot}`} />
-                    <span className="text-xs text-muted-foreground">{progressConfig[patient.progress].label}</span>
+                  <div className="flex items-center gap-3">
+                    <Badge
+                      variant="secondary"
+                      className={`rounded-lg text-[10px] px-2 py-0.5 ${statusConfig[patient.status]?.className ?? statusConfig.active.className}`}
+                    >
+                      {statusConfig[patient.status]?.label ?? patient.status}
+                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`h-2 w-2 rounded-full ${progressConfig[patient.progress ?? "stable"]?.dot ?? progressConfig.stable.dot}`}
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        {progressConfig[patient.progress ?? "stable"]?.label ?? "Estável"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground shrink-0">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-xl text-muted-foreground hover:text-foreground shrink-0"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </DashboardLayout>

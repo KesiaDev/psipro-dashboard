@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { api, ApiError } from "@/lib/api";
+import { toast } from "sonner";
 
 export interface Patient {
   id: string;
-  user_id: string;
+  user_id?: string;
   full_name: string;
+  name?: string;
   email: string | null;
   phone: string | null;
   date_of_birth: string | null;
@@ -14,34 +15,92 @@ export interface Patient {
   status: "active" | "inactive" | "new";
   created_at: string;
   updated_at: string;
+  age?: number;
+  sessions?: number;
+  lastSession?: string;
+  last_session_at?: string;
+  nextSession?: string | null;
+  next_session_at?: string | null;
+  progress?: "improving" | "stable" | "attention";
 }
 
-export function usePatients() {
-  const { user } = useAuth();
+export interface CreatePatientInput {
+  full_name: string;
+  email?: string | null;
+  phone?: string | null;
+  date_of_birth?: string | null;
+  cpf?: string | null;
+  notes?: string | null;
+  status?: "active" | "inactive" | "new";
+}
+
+export interface UsePatientsState {
+  patients: Patient[];
+  loading: boolean;
+  error: ApiError | null;
+  refetch: () => Promise<void>;
+  createPatient: (input: CreatePatientInput) => Promise<Patient | null>;
+}
+
+function mapPatient(raw: Record<string, unknown>): Patient {
+  const name = (raw.full_name as string) ?? (raw.name as string) ?? "";
+  return {
+    id: String(raw.id ?? ""),
+    full_name: name,
+    name,
+    email: (raw.email as string) ?? null,
+    phone: (raw.phone as string) ?? null,
+    date_of_birth: (raw.date_of_birth as string) ?? null,
+    cpf: (raw.cpf as string) ?? null,
+    notes: (raw.notes as string) ?? null,
+    status: ((raw.status as string) ?? "active") as Patient["status"],
+    created_at: (raw.created_at as string) ?? (raw.createdAt as string) ?? "",
+    updated_at: (raw.updated_at as string) ?? (raw.updatedAt as string) ?? "",
+    age: raw.age != null ? Number(raw.age) : undefined,
+    sessions: raw.sessions != null ? Number(raw.sessions) : undefined,
+    lastSession: (raw.lastSession as string) ?? (raw.last_session_at as string),
+    last_session_at: (raw.last_session_at as string) ?? (raw.lastSession as string),
+    nextSession: (raw.nextSession as string) ?? (raw.next_session_at as string) ?? null,
+    next_session_at: (raw.next_session_at as string) ?? (raw.nextSession as string) ?? null,
+    progress: (raw.progress as Patient["progress"]) ?? undefined,
+  };
+}
+
+export function usePatients(): UsePatientsState {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<ApiError | null>(null);
 
   const fetchPatients = useCallback(async () => {
-    if (!user) return;
     setLoading(true);
+    setError(null);
     try {
-      const { data, error } = await (supabase as any)
-        .from("patients")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("full_name");
-      if (error) throw error;
-      setPatients(data || []);
+      const res = await api.get<{ patients?: Record<string, unknown>[]; data?: Record<string, unknown>[] }>("/patients");
+      const raw = res.patients ?? res.data ?? (Array.isArray(res) ? res : []);
+      setPatients(raw.map((p: Record<string, unknown>) => mapPatient(p)));
     } catch (err) {
-      console.error("Error fetching patients:", err);
+      setError(err as ApiError);
+      setPatients([]);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     fetchPatients();
   }, [fetchPatients]);
 
-  return { patients, loading, refetch: fetchPatients };
+  const createPatient = useCallback(async (input: CreatePatientInput): Promise<Patient | null> => {
+    try {
+      const res = await api.post<Patient | Record<string, unknown>>("/patients", input);
+      toast.success("Paciente criado com sucesso");
+      await fetchPatients();
+      return mapPatient((res as Record<string, unknown>) ?? {});
+    } catch (err) {
+      toast.error("Erro ao criar paciente");
+      return null;
+    }
+  }, [fetchPatients]);
+
+  return { patients, loading, error, refetch: fetchPatients, createPatient };
 }

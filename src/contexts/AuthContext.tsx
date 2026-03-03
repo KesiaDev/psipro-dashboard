@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, CLINIC_ID_KEY } from "@/lib/api";
 
 export interface AuthUser {
   id: string;
@@ -62,17 +62,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const res = await api.post<{ access_token: string; user?: AuthUser }>("/auth/login", {
+      const res = await api.post<{ access_token: string; user?: AuthUser; clinics?: { id: string }[] }>("/auth/login", {
         email,
         password,
       });
       const token = res.access_token ?? (res as { access_token?: string }).access_token;
       const userData = res.user ?? (res as { user?: AuthUser }).user ?? { id: email, email };
+      const clinics = res.clinics ?? (res as { clinics?: { id: string }[] }).clinics;
       if (token) {
         localStorage.setItem(TOKEN_KEY, token);
         localStorage.setItem(AUTH_KEY, JSON.stringify({ id: userData?.id ?? email, email: userData?.email ?? email, ...userData }));
         setUser({ id: String(userData?.id ?? email), email: userData?.email ?? email, ...userData } as AuthUser);
         setSession({ access_token: token });
+        // Múltiplas clínicas: salvar a primeira para X-Clinic-Id
+        if (clinics?.length) {
+          localStorage.setItem(CLINIC_ID_KEY, clinics[0].id);
+        }
         return { error: null };
       }
       return { error: new Error("Resposta inválida do servidor") };
@@ -105,6 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem(CLINIC_ID_KEY);
     setUser(null);
     setSession(null);
   };

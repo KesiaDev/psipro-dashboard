@@ -1,20 +1,32 @@
 /**
  * API client para comunicação com o backend NestJS.
- * Todas as requisições usam VITE_API_URL (ou NEXT_PUBLIC_API_URL).
+ * Usa VITE_API_URL (sem /api no final - ex: https://psipro-backend-production.up.railway.app).
+ * Rotas: /reports, /patients, /appointments/today, etc. (sem prefixo /api nas chamadas).
  * Fluxo: Web → Backend (NestJS) → Prisma → PostgreSQL
  */
 
-const getBaseUrl = () => {
-  const url = import.meta.env.VITE_API_URL || import.meta.env.NEXT_PUBLIC_API_URL;
+const CLINIC_ID_KEY = "clinicId";
+
+const getBaseUrl = (): string => {
+  const url = (import.meta.env.VITE_API_URL || import.meta.env.NEXT_PUBLIC_API_URL || "").trim();
   if (!url) {
     console.error("VITE_API_URL ou NEXT_PUBLIC_API_URL não configurada no .env");
+    return "";
   }
-  return url || "";
+  // Use base URL sem /api no final. Ex: https://psipro-backend-production.up.railway.app
+  // Rotas são /reports, /patients, etc. (sem prefixo /api nas chamadas).
+  return url.replace(/\/+$/, "");
 };
 
 const getAuthToken = (): string | null => {
   return localStorage.getItem("psipro_token");
 };
+
+const getClinicId = (): string | null => {
+  return localStorage.getItem(CLINIC_ID_KEY);
+};
+
+export { CLINIC_ID_KEY };
 
 export interface ApiError {
   status: number;
@@ -32,15 +44,25 @@ export async function apiRequest<T>(
   }
 
   const token = getAuthToken();
+  const clinicId = getClinicId();
+
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...options.headers,
   };
+
   if (token) {
     (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
   }
 
-  const url = endpoint.startsWith("http") ? endpoint : `${baseUrl.replace(/\/$/, "")}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  if (clinicId) {
+    (headers as Record<string, string>)["X-Clinic-Id"] = clinicId;
+  }
+
+  const base = baseUrl.replace(/\/$/, "");
+  const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const url = endpoint.startsWith("http") ? endpoint : `${base}${path}`;
+
   const response = await fetch(url, {
     ...options,
     headers,
@@ -49,6 +71,7 @@ export async function apiRequest<T>(
   if (response.status === 401) {
     localStorage.removeItem("psipro_token");
     localStorage.removeItem("psipro_user");
+    localStorage.removeItem(CLINIC_ID_KEY);
     window.dispatchEvent(new CustomEvent("psipro:auth:401"));
     throw { status: 401, message: "Sessão expirada. Faça login novamente.", data: null } as ApiError;
   }
@@ -63,7 +86,7 @@ export async function apiRequest<T>(
       const errData = await response.json();
       message = errData.message || errData.error || message;
     } catch {
-      message = await response.text() || message;
+      message = (await response.text()) || message;
     }
     throw { status: response.status, message, data: null } as ApiError;
   }

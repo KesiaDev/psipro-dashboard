@@ -62,10 +62,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const res = await api.post<{ access_token: string; user?: AuthUser; clinics?: { id: string }[] }>("/auth/login", {
-        email,
-        password,
-      });
+      const payload = { email, password };
+      const res = await api.post<{ access_token: string; user?: AuthUser; clinics?: { id: string }[] }>("/auth/login", payload);
       const token = res.access_token ?? (res as { access_token?: string }).access_token;
       const userData = res.user ?? (res as { user?: AuthUser }).user ?? { id: email, email };
       const clinics = res.clinics ?? (res as { clinics?: { id: string }[] }).clinics;

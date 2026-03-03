@@ -1,30 +1,14 @@
 /**
- * API client para comunicação com o backend NestJS.
- * Usa VITE_API_URL (sem /api no final - ex: https://psipro-backend-production.up.railway.app).
- * Rotas: /reports, /patients, /appointments/today, etc. (sem prefixo /api nas chamadas).
+ * Cliente HTTP com axios para comunicação com o backend NestJS.
+ * baseURL vem de VITE_API_URL - rotas são sempre relativas.
  * Fluxo: Web → Backend (NestJS) → Prisma → PostgreSQL
  */
 
+import axios, { AxiosError } from "axios";
+
 const CLINIC_ID_KEY = "clinicId";
-
-const getBaseUrl = (): string => {
-  const url = (import.meta.env.VITE_API_URL || import.meta.env.NEXT_PUBLIC_API_URL || "").trim();
-  if (!url) {
-    console.error("VITE_API_URL ou NEXT_PUBLIC_API_URL não configurada no .env");
-    return "";
-  }
-  // Use base URL sem /api no final. Ex: https://psipro-backend-production.up.railway.app
-  // Rotas são /reports, /patients, etc. (sem prefixo /api nas chamadas).
-  return url.replace(/\/+$/, "");
-};
-
-const getAuthToken = (): string | null => {
-  return localStorage.getItem("psipro_token");
-};
-
-const getClinicId = (): string | null => {
-  return localStorage.getItem(CLINIC_ID_KEY);
-};
+const TOKEN_KEY = "psipro_token";
+const USER_KEY = "psipro_user";
 
 export { CLINIC_ID_KEY };
 
@@ -34,77 +18,68 @@ export interface ApiError {
   data?: unknown;
 }
 
-export async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const baseUrl = getBaseUrl();
-  if (!baseUrl) {
-    throw { status: 0, message: "API URL não configurada" } as ApiError;
-  }
-
-  const token = getAuthToken();
-  const clinicId = getClinicId();
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...options.headers,
-  };
-
-  if (token) {
-    (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
-  }
-
-  if (clinicId) {
-    (headers as Record<string, string>)["X-Clinic-Id"] = clinicId;
-  }
-
-  const base = baseUrl.replace(/\/$/, "");
-  const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  const url = endpoint.startsWith("http") ? endpoint : `${base}${path}`;
-
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  if (response.status === 401) {
-    localStorage.removeItem("psipro_token");
-    localStorage.removeItem("psipro_user");
-    localStorage.removeItem(CLINIC_ID_KEY);
-    window.dispatchEvent(new CustomEvent("psipro:auth:401"));
-    throw { status: 401, message: "Sessão expirada. Faça login novamente.", data: null } as ApiError;
-  }
-
-  if (response.status === 403) {
-    throw { status: 403, message: "Acesso negado. Você não tem permissão para esta ação.", data: null } as ApiError;
-  }
-
-  if (!response.ok) {
-    let message = `Erro ${response.status}`;
-    try {
-      const errData = await response.json();
-      message = errData.message || errData.error || message;
-    } catch {
-      message = (await response.text()) || message;
-    }
-    throw { status: response.status, message, data: null } as ApiError;
-  }
-
-  const contentType = response.headers.get("content-type");
-  if (contentType?.includes("application/json")) {
-    return response.json() as Promise<T>;
-  }
-  return response.text() as unknown as T;
+const baseURL = (import.meta.env.VITE_API_URL || import.meta.env.NEXT_PUBLIC_API_URL || "").trim();
+if (!baseURL) {
+  console.error("VITE_API_URL ou NEXT_PUBLIC_API_URL não configurada no .env");
 }
 
+const axiosInstance = axios.create({
+  baseURL: baseURL || undefined,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const clinicId = localStorage.getItem(CLINIC_ID_KEY);
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (clinicId) {
+    config.headers["X-Clinic-Id"] = clinicId;
+  }
+
+  return config;
+});
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    const status = error.response?.status ?? 0;
+    const data = error.response?.data as { message?: string; error?: string } | undefined;
+
+    if (status === 401) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(CLINIC_ID_KEY);
+      window.dispatchEvent(new CustomEvent("psipro:auth:401"));
+    }
+
+    const apiError: ApiError = {
+      status,
+      message: data?.message ?? data?.error ?? error.message ?? `Erro ${status}`,
+      data: error.response?.data,
+    };
+
+    return Promise.reject(apiError);
+  }
+);
+
 export const api = {
-  get: <T>(endpoint: string) => apiRequest<T>(endpoint, { method: "GET" }),
-  post: <T>(endpoint: string, body?: unknown) =>
-    apiRequest<T>(endpoint, { method: "POST", body: body ? JSON.stringify(body) : undefined }),
-  put: <T>(endpoint: string, body?: unknown) =>
-    apiRequest<T>(endpoint, { method: "PUT", body: body ? JSON.stringify(body) : undefined }),
-  patch: <T>(endpoint: string, body?: unknown) =>
-    apiRequest<T>(endpoint, { method: "PATCH", body: body ? JSON.stringify(body) : undefined }),
-  delete: <T>(endpoint: string) => apiRequest<T>(endpoint, { method: "DELETE" }),
+  get: <T>(url: string) =>
+    axiosInstance.get<T>(url).then((res) => res.data),
+
+  post: <T>(url: string, body?: unknown) =>
+    axiosInstance.post<T>(url, body).then((res) => res.data),
+
+  put: <T>(url: string, body?: unknown) =>
+    axiosInstance.put<T>(url, body).then((res) => res.data),
+
+  patch: <T>(url: string, body?: unknown) =>
+    axiosInstance.patch<T>(url, body).then((res) => res.data),
+
+  delete: <T>(url: string) =>
+    axiosInstance.delete<T>(url).then((res) => res.data),
 };

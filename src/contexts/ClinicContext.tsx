@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useClinics } from "@/hooks/useClinics";
-import { CLINIC_ID_KEY } from "@/lib/api";
+import { CLINIC_ID_KEY } from "@/services/api";
 
 export type UserRole = "owner" | "admin" | "psychologist";
 

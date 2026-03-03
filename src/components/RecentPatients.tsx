@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RecentPatient } from "@/hooks/useRecentPatients";
-import type { ApiError } from "@/lib/api";
+import type { ApiError } from "@/services/api";
 
 interface RecentPatientsProps {
   patients: RecentPatient[];

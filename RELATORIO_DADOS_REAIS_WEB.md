@@ -21,7 +21,7 @@
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/lib/api.ts` | **Novo** — Cliente HTTP para API NestJS com suporte a token, tratamento 401/403 |
+| `src/services/api.ts` | **Único ponto de requisição HTTP** — Cliente axios com baseURL (VITE_API_URL), token, X-Clinic-Id, 401/403 |
 | `src/vite-env.d.ts` | Adicionadas tipagens para `VITE_API_URL` e `NEXT_PUBLIC_API_URL` |
 | `.env` | Adicionado `VITE_API_URL=http://localhost:3000` |
 | `src/contexts/AuthContext.tsx` | Substituído Supabase por autenticação via API NestJS (POST /auth/login) |

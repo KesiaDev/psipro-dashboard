@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError } from "@/services/api";
 import { toast } from "sonner";
 
 export interface FinancialRecord {

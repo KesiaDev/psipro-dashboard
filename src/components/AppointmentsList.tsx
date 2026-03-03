@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TodayAppointment } from "@/hooks/useTodayAppointments";
-import type { ApiError } from "@/lib/api";
+import type { ApiError } from "@/services/api";
 
 interface AppointmentsListProps {
   appointments: TodayAppointment[];

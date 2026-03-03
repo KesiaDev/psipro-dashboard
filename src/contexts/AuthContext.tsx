@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { api, ApiError, CLINIC_ID_KEY } from "@/lib/api";
+import { api, ApiError, CLINIC_ID_KEY } from "@/services/api";
 
 export interface AuthUser {
   id: string;

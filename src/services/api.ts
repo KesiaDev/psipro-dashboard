@@ -1,6 +1,7 @@
 /**
- * Cliente HTTP com axios para comunicação com o backend NestJS.
- * baseURL vem de VITE_API_URL - rotas são sempre relativas.
+ * Ponto central ÚNICO para todas as requisições HTTP do frontend.
+ * baseURL: import.meta.env.VITE_API_URL (sem concatenação manual).
+ * Rotas sempre relativas: /auth/login, /clinics, /patients, /reports, etc.
  * Fluxo: Web → Backend (NestJS) → Prisma → PostgreSQL
  */
 

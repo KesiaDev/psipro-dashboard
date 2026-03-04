@@ -11,6 +11,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useProfile } from "@/hooks/useProfile";
 import { PsiProLogo } from "@/components/PsiProLogo";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -42,8 +43,24 @@ const bottomNav = [
   { title: "Configurações", url: "/settings", icon: Settings },
 ];
 
+function getInitials(name: string): string {
+  const trimmed = name?.trim() || "";
+  if (!trimmed) return "?";
+  return trimmed
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
 export function AppSidebar() {
   const navigate = useNavigate();
+  const { profile } = useProfile();
+
+  const displayName = profile?.name?.trim() || "";
+  const displayCrp = profile?.crp?.trim() || "";
+  const hasProfile = displayName || displayCrp;
 
   const handleLogout = () => {
     navigate("/login");
@@ -101,18 +118,25 @@ export function AppSidebar() {
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
-        <div className="mt-3 flex items-center gap-3 rounded-xl bg-secondary p-3">
+        <div
+          className="mt-3 flex items-center gap-3 rounded-xl bg-secondary p-3 cursor-pointer hover:bg-secondary/80 transition-colors"
+          onClick={() => navigate("/settings")}
+        >
           <Avatar className="h-9 w-9">
             <AvatarFallback className="gold-gradient text-primary-foreground text-sm font-semibold">
-              MC
+              {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">Dra. Maria Costa</p>
-            <p className="text-xs text-muted-foreground truncate">CRP 06/12345</p>
+            <p className="text-sm font-medium text-foreground truncate">
+              {hasProfile ? displayName : "Configurar perfil"}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {displayCrp || (hasProfile ? "" : "Adicione nome e CRP em Configurações")}
+            </p>
           </div>
           <button
-            onClick={handleLogout}
+            onClick={(e) => { e.stopPropagation(); handleLogout(); }}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
             title="Sair"
           >

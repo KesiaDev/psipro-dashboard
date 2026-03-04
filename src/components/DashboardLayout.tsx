@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ClinicSelector } from "@/components/ClinicSelector";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WorkspaceSelectionModal } from "@/components/WorkspaceSelectionModal";
+import { CreateFirstClinicModal } from "@/components/CreateFirstClinicModal";
 import { useClinic } from "@/contexts/ClinicContext";
 
 interface DashboardLayoutProps {
@@ -13,7 +14,7 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayoutProps) {
-  const { needsWorkspaceSelection } = useClinic();
+  const { needsWorkspaceSelection, needsFirstClinic } = useClinic();
 
   return (
     <SidebarProvider>
@@ -42,6 +43,7 @@ export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayo
           </main>
         </div>
       </div>
+      {needsFirstClinic && <CreateFirstClinicModal />}
       {needsWorkspaceSelection && <WorkspaceSelectionModal />}
     </SidebarProvider>
   );

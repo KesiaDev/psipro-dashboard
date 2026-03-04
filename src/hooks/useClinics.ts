@@ -42,6 +42,8 @@ export function useClinics(): UseClinicsState {
     setLoading(true);
     setError(null);
     try {
+      // IMPORTANTE: O backend deve retornar APENAS clínicas do usuário autenticado
+      // (onde ele é proprietário ou foi adicionado como profissional)
       const res = await api.get<{ clinics?: Clinic[]; data?: Clinic[] }>("/clinics");
       const raw = res.clinics ?? res.data ?? (Array.isArray(res) ? res : []);
       const mapped: Clinic[] = raw.map((c: Record<string, unknown>) => ({

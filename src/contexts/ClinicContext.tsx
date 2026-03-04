@@ -44,6 +44,7 @@ interface ClinicContextType {
   updateClinic: (id: string, input: Partial<CreateClinicInput>) => Promise<boolean>;
   updateClinicStatus: (id: string, status: "active" | "inactive") => Promise<boolean>;
   needsWorkspaceSelection: boolean;
+  needsFirstClinic: boolean;
   confirmWorkspaceSelection: () => void;
 }
 
@@ -62,7 +63,9 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const needsWorkspaceSelection = clinics.length > 0 && !sessionStorage.getItem(WORKSPACE_CHOSEN_KEY) && !workspaceConfirmed;
+  const hasChosenWorkspace = !!sessionStorage.getItem(WORKSPACE_CHOSEN_KEY) || workspaceConfirmed;
+  const needsWorkspaceSelection = clinics.length > 1 && !hasChosenWorkspace;
+  const needsFirstClinic = clinics.length === 0 && !loading && !error;
 
   const confirmWorkspaceSelection = useCallback(() => {
     if (selectedClinicId) {
@@ -88,6 +91,11 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
       }
     } else if (!selectedClinicId) {
       setSelectedClinicIdState(clinics[0].id);
+      if (clinics.length === 1) {
+        localStorage.setItem(CLINIC_ID_KEY, clinics[0].id);
+        sessionStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ clinicId: clinics[0].id, role: "owner" }));
+        setWorkspaceConfirmed(true);
+      }
     }
   }, [clinics]);
 
@@ -107,7 +115,7 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ClinicContext.Provider
-      value={{ clinics, selectedClinic, setSelectedClinicId, userRole, setUserRole, loading, error, refetch, createClinic, updateClinic, updateClinicStatus, needsWorkspaceSelection, confirmWorkspaceSelection }}
+      value={{ clinics, selectedClinic, setSelectedClinicId, userRole, setUserRole, loading, error, refetch, createClinic, updateClinic, updateClinicStatus, needsWorkspaceSelection, needsFirstClinic, confirmWorkspaceSelection }}
     >
       {children}
     </ClinicContext.Provider>

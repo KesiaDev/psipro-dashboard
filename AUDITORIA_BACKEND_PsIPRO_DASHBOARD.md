@@ -393,7 +393,17 @@
 
 ---
 
-## 11. RESUMO EXECUTIVO
+## 11. REQUISITO BACKEND — FILTRO DE CLÍNICAS
+
+**GET /clinics** deve retornar **apenas as clínicas do usuário autenticado**:
+- Clínicas onde o usuário é proprietário
+- Clínicas onde o usuário foi adicionado como profissional ou administrador
+
+**Não** deve retornar clínicas de exemplo, seed data ou de outros usuários. Caso contrário, ao fazer login a usuária verá consultórios que não são dela.
+
+---
+
+## 12. RESUMO EXECUTIVO
 
 | Área | Integração | Observação |
 |------|------------|------------|

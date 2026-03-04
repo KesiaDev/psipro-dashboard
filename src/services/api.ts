@@ -20,6 +20,9 @@ export interface ApiError {
 }
 
 const baseURL = (import.meta.env.VITE_API_URL || import.meta.env.NEXT_PUBLIC_API_URL || "").trim();
+
+// DEBUG: verificar baseURL em runtime (remover depois)
+console.log("baseURL:", baseURL, "| contém /api:", baseURL.endsWith("/api"));
 if (!baseURL) {
   console.error("VITE_API_URL ou NEXT_PUBLIC_API_URL não configurada no .env");
 }
@@ -40,6 +43,18 @@ axiosInstance.interceptors.request.use((config) => {
   }
   if (clinicId) {
     config.headers["X-Clinic-Id"] = clinicId;
+  }
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  }
+
+  // DEBUG: remover depois de validar fluxo financeiro
+  if (config.url?.includes("financial")) {
+    console.log("[API] Financial request:", {
+      url: config.url,
+      hasAuth: !!config.headers.Authorization,
+      hasClinicId: !!config.headers["X-Clinic-Id"],
+    });
   }
 
   return config;
@@ -74,6 +89,20 @@ export const api = {
 
   post: <T>(url: string, body?: unknown) =>
     axiosInstance.post<T>(url, body).then((res) => res.data),
+
+  postForm: <T>(url: string, formData: FormData, onProgress?: (percent: number) => void) =>
+    axiosInstance
+      .post<T>(url, formData, {
+        headers: { "Content-Type": undefined },
+        ...(onProgress && {
+          onUploadProgress: (e) => {
+            if (e.total && e.total > 0) {
+              onProgress(Math.round((e.loaded / e.total) * 100));
+            }
+          },
+        }),
+      })
+      .then((res) => res.data),
 
   put: <T>(url: string, body?: unknown) =>
     axiosInstance.put<T>(url, body).then((res) => res.data),

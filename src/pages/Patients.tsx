@@ -4,11 +4,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Phone, Mail, MoreHorizontal } from "lucide-react";
+import { Search, Plus, Phone, Mail, MoreHorizontal, FileSpreadsheet } from "lucide-react";
 import { usePatients } from "@/hooks/usePatients";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
+import { ImportPatientsModal } from "@/components/patients/import-patients-modal";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   active: { label: "Ativo", className: "bg-accent text-accent-foreground" },
@@ -48,6 +49,7 @@ const Patients = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const { patients, loading, error, refetch, createPatient } = usePatients();
 
   const filtered = patients.filter((p) => {
@@ -101,6 +103,14 @@ const Patients = () => {
               }}
             />
             <Button
+              variant="outline"
+              className="rounded-xl gap-2"
+              onClick={() => setShowImportModal(true)}
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Importar Excel
+            </Button>
+            <Button
               className="gold-gradient text-primary-foreground rounded-xl gap-2"
               onClick={() => setShowAddDialog(true)}
             >
@@ -135,6 +145,12 @@ const Patients = () => {
             ))}
           </div>
         </div>
+
+        <ImportPatientsModal
+          open={showImportModal}
+          onOpenChange={setShowImportModal}
+          onSuccess={refetch}
+        />
 
         {/* Patient List */}
         <div className="grid gap-3">

@@ -2,6 +2,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Users, CalendarDays, TrendingUp, Clock, Download } from "lucide-react";
+import { exportReportsToPdf } from "@/utils/exportReportsPdf";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { useReportsData } from "@/hooks/useReportsData";
 import { ErrorState } from "@/components/ErrorState";
@@ -9,6 +10,15 @@ import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 
 const Reports = () => {
   const { data, loading, error, refetch } = useReportsData();
+
+  const handleExportPdf = () => {
+    const stats = data?.stats ?? { totalSessions: 0, activePatients: 0, returnRate: 0, avgHoursPerWeek: 0 };
+    const topPatients = data?.topPatients ?? [];
+    const monthlySessions = data?.monthlySessions ?? [];
+    const revenueData = data?.revenueData ?? [];
+    const typeData = data?.typeData ?? [];
+    exportReportsToPdf({ stats, topPatients, monthlySessions, revenueData, typeData }, null);
+  };
 
   if (error) {
     const err = error as { status?: number; message?: string };
@@ -52,7 +62,7 @@ const Reports = () => {
             <h1 className="font-heading text-2xl font-bold text-foreground">Relatórios</h1>
             <p className="text-sm text-muted-foreground">Análise de performance da clínica</p>
           </div>
-          <Button variant="secondary" className="rounded-xl gap-2">
+          <Button variant="secondary" className="rounded-xl gap-2" onClick={handleExportPdf}>
             <Download className="h-4 w-4" />
             Exportar PDF
           </Button>

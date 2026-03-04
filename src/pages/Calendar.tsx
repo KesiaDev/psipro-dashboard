@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus, Clock } from "lucide-react";
 import { useCalendarAppointments } from "@/hooks/useCalendarAppointments";
+import { usePatients } from "@/hooks/usePatients";
+import { useProfessionals } from "@/hooks/useProfessionals";
+import { useClinic } from "@/contexts/ClinicContext";
+import { AddAppointmentDialog } from "@/components/calendar/AddAppointmentDialog";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 
@@ -17,14 +21,55 @@ const statusColors: Record<string, string> = {
   completed: "border-l-muted-foreground bg-muted/50",
 };
 
+function getMonday(d: Date): Date {
+  const copy = new Date(d);
+  const day = copy.getDay();
+  const diff = copy.getDate() - day + (day === 0 ? -6 : 1);
+  copy.setDate(diff);
+  return copy;
+}
+
 const Calendar = () => {
-  const [weekStart, setWeekStart] = useState(() => {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(d.setDate(diff));
-  });
-  const { appointments, loading, error, refetch } = useCalendarAppointments();
+  const { selectedClinic } = useClinic();
+  const { patients } = usePatients();
+  const { professionals } = useProfessionals(selectedClinic?.id);
+  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+  const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
+  const { appointments, loading, error, refetch, createAppointment } = useCalendarAppointments();
+
+  const startStr = weekStart.toISOString().slice(0, 10);
+  const endDate = new Date(weekStart);
+  endDate.setDate(endDate.getDate() + 4);
+  const endStr = endDate.toISOString().slice(0, 10);
+
+  useEffect(() => {
+    refetch(startStr, endStr);
+  }, [startStr, endStr, refetch]);
+
+  const goPrevWeek = useCallback(() => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() - 7);
+    setWeekStart(d);
+  }, [weekStart]);
+
+  const goNextWeek = useCallback(() => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + 7);
+    setWeekStart(d);
+  }, [weekStart]);
+
+  const goToday = useCallback(() => {
+    setWeekStart(getMonday(new Date()));
+  }, []);
+
+  const handleCreateAppointment = useCallback(
+    async (input: Parameters<typeof createAppointment>[0]) => {
+      const ok = await createAppointment(input);
+      if (ok) refetch(startStr, endStr);
+      return ok;
+    },
+    [createAppointment, refetch, startStr, endStr]
+  );
 
   const weekDates = Array.from({ length: 5 }, (_, i) => {
     const d = new Date(weekStart);
@@ -49,7 +94,7 @@ const Calendar = () => {
           title={err.status === 401 ? "Sessão expirada" : err.status === 403 ? "Acesso negado" : "Erro ao carregar agenda"}
           message={err.message ?? "Não foi possível carregar os dados."}
           status={err.status}
-          onRetry={refetch}
+          onRetry={() => refetch(startStr, endStr)}
         />
       </DashboardLayout>
     );
@@ -92,22 +137,34 @@ const Calendar = () => {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={goPrevWeek}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="secondary" size="sm" className="rounded-xl text-xs px-4">
+              <Button variant="secondary" size="sm" className="rounded-xl text-xs px-4" onClick={goToday}>
                 Hoje
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={goNextWeek}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <Button className="gold-gradient text-primary-foreground rounded-xl gap-2">
+            <Button
+              className="gold-gradient text-primary-foreground rounded-xl gap-2"
+              onClick={() => setShowAppointmentDialog(true)}
+            >
               <Plus className="h-4 w-4" />
               Novo Agendamento
             </Button>
           </div>
         </div>
+
+        <AddAppointmentDialog
+          open={showAppointmentDialog}
+          onOpenChange={setShowAppointmentDialog}
+          patients={patients}
+          professionals={professionals}
+          defaultDate={startStr}
+          onSave={handleCreateAppointment}
+        />
 
         {/* Weekly Calendar */}
         <div className="card-soft overflow-hidden animate-fade-in">

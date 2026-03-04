@@ -130,7 +130,7 @@ const Financials = () => {
             ) : records.length === 0 ? (
               <div className="text-center py-12">
                 <Wallet className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">Nenhum registro financeiro ainda.</p>
+                <p className="text-sm text-muted-foreground">Nenhum registro financeiro encontrado</p>
                 <p className="text-xs text-muted-foreground mt-1">Clique em "Novo Registro" para começar.</p>
               </div>
             ) : (

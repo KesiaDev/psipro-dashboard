@@ -68,7 +68,7 @@ const Index = () => {
           <StatCard
             title="Pacientes Ativos"
             value={String(patientsCount)}
-            change={stats ? "+3 este mês" : undefined}
+            change={stats ? "cadastrados" : undefined}
             changeType="positive"
             icon={Users}
           />

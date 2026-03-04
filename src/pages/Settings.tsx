@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { PageContainer } from "@/components/PageContainer";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -9,14 +9,87 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Camera, Bell, Shield, Clock, Smartphone } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { ErrorState } from "@/components/ErrorState";
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 const Settings = () => {
+  const { profile, loading, error, refetch, updateProfile, updatePassword } = useProfile();
+  const [profileForm, setProfileForm] = useState({ name: "", crp: "", email: "", phone: "", specialties: "" });
+  const [profileSaving, setProfileSaving] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
     sms: false,
     reminder: true,
   });
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setProfileForm({
+        name: profile.name ?? "",
+        crp: profile.crp ?? "",
+        email: profile.email ?? "",
+        phone: profile.phone ?? "",
+        specialties: profile.specialties ?? "",
+      });
+    }
+  }, [profile]);
+
+  const handleSaveProfile = async () => {
+    setProfileSaving(true);
+    try {
+      await updateProfile(profileForm);
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      const ok = await updatePassword(currentPassword, newPassword);
+      if (ok) {
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  if (error && !profile) {
+    return (
+      <DashboardLayout title="Configurações">
+        <ErrorState title="Erro ao carregar perfil" message={(error as { message?: string }).message ?? ""} onRetry={refetch} />
+      </DashboardLayout>
+    );
+  }
+
+  if (loading && !profile) {
+    return (
+      <DashboardLayout title="Configurações">
+        <LoadingSkeleton variant="page" />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Configurações">
@@ -54,44 +127,70 @@ const Settings = () => {
               <div className="flex items-center gap-6 mb-8">
                 <div className="relative">
                   <Avatar className="h-20 w-20">
-                    <AvatarFallback className="gold-gradient text-primary-foreground text-xl font-bold">MC</AvatarFallback>
+                    <AvatarFallback className="gold-gradient text-primary-foreground text-xl font-bold">
+                      {getInitials(profileForm.name || "U")}
+                    </AvatarFallback>
                   </Avatar>
                   <button className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-colors">
                     <Camera className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
                 </div>
                 <div>
-                  <p className="font-heading text-lg font-semibold text-foreground">Dra. Maria Costa</p>
-                  <p className="text-sm text-muted-foreground">CRP 06/12345 · Psicóloga Clínica</p>
+                  <p className="font-heading text-lg font-semibold text-foreground">{profileForm.name || "Usuário"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {profileForm.crp ? `${profileForm.crp} · ` : ""}Perfil
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <Label className="text-sm text-muted-foreground">Nome completo</Label>
-                  <Input defaultValue="Maria Costa" className="input-premium" />
+                  <Input
+                    value={profileForm.name}
+                    onChange={(e) => setProfileForm((p) => ({ ...p, name: e.target.value }))}
+                    className="input-premium"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm text-muted-foreground">CRP</Label>
-                  <Input defaultValue="06/12345" className="input-premium" />
+                  <Input
+                    value={profileForm.crp}
+                    onChange={(e) => setProfileForm((p) => ({ ...p, crp: e.target.value }))}
+                    className="input-premium"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm text-muted-foreground">E-mail</Label>
-                  <Input defaultValue="maria.costa@psipro.com" type="email" className="input-premium" />
+                  <Input
+                    type="email"
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))}
+                    className="input-premium"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm text-muted-foreground">Telefone</Label>
-                  <Input defaultValue="(11) 99123-4567" className="input-premium" />
+                  <Input
+                    value={profileForm.phone}
+                    onChange={(e) => setProfileForm((p) => ({ ...p, phone: e.target.value }))}
+                    className="input-premium"
+                  />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label className="text-sm text-muted-foreground">Especialidades</Label>
-                  <Input defaultValue="TCC, Terapia de Casal, Avaliação Neuropsicológica" className="input-premium" />
+                  <Input
+                    value={profileForm.specialties}
+                    onChange={(e) => setProfileForm((p) => ({ ...p, specialties: e.target.value }))}
+                    placeholder="TCC, Terapia de Casal..."
+                    className="input-premium"
+                  />
                 </div>
               </div>
 
               <div className="flex justify-end mt-6">
-                <Button variant="gold" className="rounded-xl gap-2">
-                  <Save className="h-4 w-4" /> Salvar Alterações
+                <Button variant="gold" className="rounded-xl gap-2" onClick={handleSaveProfile} disabled={profileSaving}>
+                  <Save className="h-4 w-4" /> {profileSaving ? "Salvando..." : "Salvar Alterações"}
                 </Button>
               </div>
             </div>
@@ -201,29 +300,26 @@ const Settings = () => {
                 <Smartphone className="h-5 w-5 text-primary" />
                 <h3 className="font-heading text-base font-semibold text-foreground">Integrações</h3>
               </div>
+              <p className="text-sm text-muted-foreground mb-4">Integrações com serviços externos estarão disponíveis em breve.</p>
               <div className="space-y-4">
                 {[
-                  { name: "PsiPro App", desc: "Conecte com o aplicativo mobile PsiPro", status: "Conectado", connected: true },
-                  { name: "Google Calendar", desc: "Sincronize sua agenda com o Google Calendar", status: "Desconectado", connected: false },
-                  { name: "WhatsApp Business", desc: "Envie lembretes e mensagens automatizadas", status: "Desconectado", connected: false },
-                  { name: "Gateway de Pagamento", desc: "Receba pagamentos online dos pacientes", status: "Desconectado", connected: false },
+                  { name: "PsiPro App", desc: "Conecte com o aplicativo mobile PsiPro" },
+                  { name: "Google Calendar", desc: "Sincronize sua agenda com o Google Calendar" },
+                  { name: "WhatsApp Business", desc: "Envie lembretes e mensagens automatizadas" },
+                  { name: "Gateway de Pagamento", desc: "Receba pagamentos online dos pacientes" },
                 ].map((item) => (
                   <div key={item.name} className="flex items-center justify-between py-4 border-b border-border/50 last:border-0">
                     <div className="flex items-center gap-4">
-                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${item.connected ? "gold-gradient" : "bg-muted"}`}>
-                        <Smartphone className={`h-5 w-5 ${item.connected ? "text-primary-foreground" : "text-muted-foreground"}`} />
+                      <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-muted">
+                        <Smartphone className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <div>
                         <p className="text-sm font-medium text-foreground">{item.name}</p>
                         <p className="text-xs text-muted-foreground">{item.desc}</p>
                       </div>
                     </div>
-                    <Button
-                      variant={item.connected ? "secondary" : "outline-gold"}
-                      size="sm"
-                      className="rounded-xl"
-                    >
-                      {item.connected ? "Gerenciar" : "Conectar"}
+                    <Button variant="outline-gold" size="sm" className="rounded-xl" disabled>
+                      Em breve
                     </Button>
                   </div>
                 ))}

@@ -1,21 +1,39 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { PageContainer } from "@/components/PageContainer";
 import { useClinic } from "@/contexts/ClinicContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Plus, Users, MapPin, Phone, Mail, MoreVertical, TrendingUp } from "lucide-react";
+import { Building2, Plus, Users, MapPin, Phone, Mail, MoreVertical, TrendingUp, Pencil, Users as UsersIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ClinicFormDialog } from "@/components/clinics/ClinicFormDialog";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import type { Clinic } from "@/hooks/useClinics";
 
 const Clinics = () => {
-  const { clinics, userRole, loading, error, refetch } = useClinic();
+  const navigate = useNavigate();
+  const { clinics, userRole, loading, error, refetch, createClinic, updateClinic, updateClinicStatus } = useClinic();
+  const [showClinicDialog, setShowClinicDialog] = useState(false);
+  const [clinicToEdit, setClinicToEdit] = useState<Clinic | null>(null);
+  const [clinicToDeactivate, setClinicToDeactivate] = useState<Clinic | null>(null);
 
   if (error) {
     const err = error as { status?: number; message?: string };
@@ -47,7 +65,7 @@ const Clinics = () => {
         breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Clínicas" }]}
         actions={
           userRole === "owner" && (
-            <Button variant="gold" className="gap-2">
+            <Button variant="gold" className="gap-2" onClick={() => { setClinicToEdit(null); setShowClinicDialog(true); }}>
               <Plus className="h-4 w-4" />
               Nova Clínica
             </Button>
@@ -95,6 +113,38 @@ const Clinics = () => {
           </Card>
         </div>
 
+        <ClinicFormDialog
+          open={showClinicDialog}
+          onOpenChange={(o) => { setShowClinicDialog(o); if (!o) setClinicToEdit(null); }}
+          clinic={clinicToEdit}
+          onCreate={createClinic}
+          onUpdate={updateClinic}
+        />
+
+        <AlertDialog open={!!clinicToDeactivate} onOpenChange={(o) => !o && setClinicToDeactivate(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Desativar clínica</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja desativar <strong>{clinicToDeactivate?.name}</strong>?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  if (clinicToDeactivate && (await updateClinicStatus(clinicToDeactivate.id, "inactive"))) {
+                    setClinicToDeactivate(null);
+                  }
+                }}
+              >
+                Desativar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Clinic cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
           {clinics.map((clinic) => (
@@ -119,11 +169,24 @@ const Clinics = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-card border-border">
-                      <DropdownMenuItem>Editar</DropdownMenuItem>
-                      <DropdownMenuItem>Ver profissionais</DropdownMenuItem>
-                      <DropdownMenuItem>Financeiro</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setClinicToEdit(clinic); setShowClinicDialog(true); }}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { navigate("/psychologists"); }}>
+                        <UsersIcon className="h-4 w-4 mr-2" />
+                        Ver profissionais
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate("/financials")}>
+                        Financeiro
+                      </DropdownMenuItem>
                       {userRole === "owner" && (
-                        <DropdownMenuItem className="text-destructive">Desativar</DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => setClinicToDeactivate(clinic)}
+                        >
+                          Desativar
+                        </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>

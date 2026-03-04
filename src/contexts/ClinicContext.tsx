@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { useClinics } from "@/hooks/useClinics";
+import { useClinics, type CreateClinicInput } from "@/hooks/useClinics";
 import { CLINIC_ID_KEY } from "@/services/api";
 
 export type UserRole = "owner" | "admin" | "psychologist";
@@ -40,12 +40,15 @@ interface ClinicContextType {
   loading: boolean;
   error: { status?: number; message?: string } | null;
   refetch: () => Promise<void>;
+  createClinic: (input: CreateClinicInput) => Promise<Clinic | null>;
+  updateClinic: (id: string, input: Partial<CreateClinicInput>) => Promise<boolean>;
+  updateClinicStatus: (id: string, status: "active" | "inactive") => Promise<boolean>;
 }
 
 const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
 
 export function ClinicProvider({ children }: { children: React.ReactNode }) {
-  const { clinics, loading, error, refetch } = useClinics();
+  const { clinics, loading, error, refetch, createClinic, updateClinic, updateClinicStatus } = useClinics();
   const [selectedClinicId, setSelectedClinicIdState] = useState<string>("");
   const [userRole, setUserRole] = useState<UserRole>("owner");
 
@@ -79,7 +82,7 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ClinicContext.Provider
-      value={{ clinics, selectedClinic, setSelectedClinicId, userRole, setUserRole, loading, error, refetch }}
+      value={{ clinics, selectedClinic, setSelectedClinicId, userRole, setUserRole, loading, error, refetch, createClinic, updateClinic, updateClinicStatus }}
     >
       {children}
     </ClinicContext.Provider>

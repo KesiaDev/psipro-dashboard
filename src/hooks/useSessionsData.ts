@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
+import { toast } from "sonner";
 
 export interface SessionItem {
   id: string | number;
@@ -13,11 +14,21 @@ export interface SessionItem {
   notes: boolean;
 }
 
+export interface CreateSessionInput {
+  patient_id: string;
+  professional_id?: string;
+  scheduled_at: string;
+  duration_minutes?: number;
+  type?: string;
+  notes?: string;
+}
+
 export interface UseSessionsDataState {
   sessions: SessionItem[];
   loading: boolean;
   error: ApiError | null;
   refetch: () => Promise<void>;
+  createSession: (input: CreateSessionInput) => Promise<boolean>;
 }
 
 function getInitials(name: string): string {
@@ -97,5 +108,17 @@ export function useSessionsData(): UseSessionsDataState {
     fetchSessions();
   }, [fetchSessions]);
 
-  return { sessions, loading, error, refetch: fetchSessions };
+  const createSession = useCallback(async (input: CreateSessionInput): Promise<boolean> => {
+    try {
+      await api.post("/sessions", input);
+      toast.success("Sessão criada com sucesso");
+      await fetchSessions();
+      return true;
+    } catch {
+      toast.error("Erro ao criar sessão");
+      return false;
+    }
+  }, [fetchSessions]);
+
+  return { sessions, loading, error, refetch: fetchSessions, createSession };
 }

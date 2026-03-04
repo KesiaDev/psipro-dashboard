@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
+import { toast } from "sonner";
 
 export interface CalendarAppointment {
   id: string | number;
@@ -13,11 +14,21 @@ export interface CalendarAppointment {
   date?: string;
 }
 
+export interface CreateAppointmentInput {
+  patient_id: string;
+  professional_id?: string;
+  scheduled_at: string;
+  duration_minutes?: number;
+  type?: string;
+  status?: string;
+}
+
 export interface UseCalendarAppointmentsState {
   appointments: CalendarAppointment[];
   loading: boolean;
   error: ApiError | null;
   refetch: (startDate?: string, endDate?: string) => Promise<void>;
+  createAppointment: (input: CreateAppointmentInput) => Promise<boolean>;
 }
 
 function getInitials(name: string): string {
@@ -78,9 +89,16 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
     }
   }, []);
 
-  useEffect(() => {
-    fetchAppointments();
-  }, [fetchAppointments]);
+  const createAppointment = useCallback(async (input: CreateAppointmentInput): Promise<boolean> => {
+    try {
+      await api.post("/appointments", input);
+      toast.success("Agendamento criado com sucesso");
+      return true;
+    } catch {
+      toast.error("Erro ao criar agendamento");
+      return false;
+    }
+  }, []);
 
-  return { appointments, loading, error, refetch: fetchAppointments };
+  return { appointments, loading, error, refetch: fetchAppointments, createAppointment };
 }

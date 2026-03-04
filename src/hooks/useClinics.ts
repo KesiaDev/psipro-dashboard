@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
+import { toast } from "sonner";
 
 export interface Clinic {
   id: string;
@@ -14,11 +15,22 @@ export interface Clinic {
   createdAt: string;
 }
 
+export interface CreateClinicInput {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  plan?: string;
+}
+
 export interface UseClinicsState {
   clinics: Clinic[];
   loading: boolean;
   error: ApiError | null;
   refetch: () => Promise<void>;
+  createClinic: (input: CreateClinicInput) => Promise<Clinic | null>;
+  updateClinic: (id: string, input: Partial<CreateClinicInput>) => Promise<boolean>;
+  updateClinicStatus: (id: string, status: "active" | "inactive") => Promise<boolean>;
 }
 
 export function useClinics(): UseClinicsState {
@@ -57,5 +69,53 @@ export function useClinics(): UseClinicsState {
     fetchClinics();
   }, [fetchClinics]);
 
-  return { clinics, loading, error, refetch: fetchClinics };
+  const createClinic = useCallback(async (input: CreateClinicInput): Promise<Clinic | null> => {
+    try {
+      const res = await api.post<Clinic | Record<string, unknown>>("/clinics", input);
+      toast.success("Clínica criada com sucesso");
+      await fetchClinics();
+      const c = (res as Record<string, unknown>) ?? {};
+      return {
+        id: String(c.id ?? ""),
+        name: (c.name as string) ?? input.name,
+        address: (c.address as string) ?? input.address,
+        phone: (c.phone as string) ?? input.phone,
+        email: (c.email as string) ?? input.email,
+        professionals: Number(c.professionals ?? 0),
+        patients: Number(c.patients ?? 0),
+        status: ((c.status as string) ?? "active") as "active" | "inactive",
+        plan: (c.plan as string) ?? input.plan ?? "",
+        createdAt: (c.createdAt as string) ?? (c.created_at as string) ?? "",
+      };
+    } catch {
+      toast.error("Erro ao criar clínica");
+      return null;
+    }
+  }, [fetchClinics]);
+
+  const updateClinic = useCallback(async (id: string, input: Partial<CreateClinicInput>): Promise<boolean> => {
+    try {
+      await api.put(`/clinics/${id}`, input);
+      toast.success("Clínica atualizada com sucesso");
+      await fetchClinics();
+      return true;
+    } catch {
+      toast.error("Erro ao atualizar clínica");
+      return false;
+    }
+  }, [fetchClinics]);
+
+  const updateClinicStatus = useCallback(async (id: string, status: "active" | "inactive"): Promise<boolean> => {
+    try {
+      await api.patch(`/clinics/${id}/status`, { status });
+      toast.success(status === "active" ? "Clínica ativada" : "Clínica desativada");
+      await fetchClinics();
+      return true;
+    } catch {
+      toast.error("Erro ao atualizar status");
+      return false;
+    }
+  }, [fetchClinics]);
+
+  return { clinics, loading, error, refetch: fetchClinics, createClinic, updateClinic, updateClinicStatus };
 }

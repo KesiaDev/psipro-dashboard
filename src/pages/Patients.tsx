@@ -22,12 +22,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Search, Plus, Phone, Mail, MoreHorizontal, FileSpreadsheet, User, Pencil, Calendar, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 import { usePatients } from "@/hooks/usePatients";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
+import { EditPatientModal } from "@/components/patients/edit-patient-modal";
 import { ImportPatientsModal } from "@/components/patients/import-patients-modal";
+import type { Patient } from "@/hooks/usePatients";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   active: { label: "Ativo", className: "bg-accent text-accent-foreground" },
@@ -71,6 +72,7 @@ const Patients = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const { patients, loading, error, refetch, createPatient, deletePatient } = usePatients();
   const [patientToDelete, setPatientToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
 
   const filtered = patients.filter((p) => {
     const name = p.full_name ?? p.name ?? "";
@@ -171,6 +173,16 @@ const Patients = () => {
           onOpenChange={setShowImportModal}
           onSuccess={refetch}
         />
+
+        {patientToEdit && (
+          <EditPatientModal
+            open={!!patientToEdit}
+            onOpenChange={(open) => !open && setPatientToEdit(null)}
+            patientId={patientToEdit.id}
+            patientData={patientToEdit}
+            onSuccess={refetch}
+          />
+        )}
 
         <AlertDialog open={!!patientToDelete} onOpenChange={(open) => !open && setPatientToDelete(null)}>
           <AlertDialogContent>
@@ -274,7 +286,7 @@ const Patients = () => {
                       <User className="h-4 w-4 mr-2" />
                       Ver paciente
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => toast.info("Edição em breve")}>
+                    <DropdownMenuItem onClick={() => setPatientToEdit(patient)}>
                       <Pencil className="h-4 w-4 mr-2" />
                       Editar paciente
                     </DropdownMenuItem>

@@ -75,8 +75,15 @@ export function useFinancialRecords(): UseFinancialRecordsState {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get<{ records?: Record<string, unknown>[]; data?: Record<string, unknown>[] }>("/financial/records");
-      const raw = res.records ?? res.data ?? (Array.isArray(res) ? res : []);
+      const res = await api.get<
+        | { records?: Record<string, unknown>[]; data?: Record<string, unknown>[] }
+        | Record<string, unknown>[]
+      >("/financial/records");
+      const raw: Record<string, unknown>[] = Array.isArray(res)
+        ? res
+        : (res as { records?: Record<string, unknown>[] })?.records ??
+          (res as { data?: Record<string, unknown>[] })?.data ??
+          [];
       setRecords(raw.map((r: Record<string, unknown>) => mapRecord(r)));
     } catch (err) {
       setError(err as ApiError);

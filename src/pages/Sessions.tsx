@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { useClinic } from "@/contexts/ClinicContext";
+import { usePatients } from "@/hooks/usePatients";
+import { useProfessionals } from "@/hooks/useProfessionals";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, FileText, Clock, Calendar } from "lucide-react";
+import { CreateSessionDialog } from "@/components/sessions/CreateSessionDialog";
 import { useSessionsData } from "@/hooks/useSessionsData";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
@@ -17,9 +21,13 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 const Sessions = () => {
+  const { selectedClinic } = useClinic();
+  const { patients } = usePatients();
+  const { professionals } = useProfessionals(selectedClinic?.id);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
-  const { sessions, loading, error, refetch } = useSessionsData();
+  const [showSessionDialog, setShowSessionDialog] = useState(false);
+  const { sessions, loading, error, refetch, createSession } = useSessionsData();
 
   const filtered = sessions.filter((s) => {
     const matchesSearch = s.patient.toLowerCase().includes(search.toLowerCase());
@@ -64,11 +72,22 @@ const Sessions = () => {
             <h1 className="font-heading text-2xl font-bold text-foreground">Sessões</h1>
             <p className="text-sm text-muted-foreground">Histórico e gerenciamento de sessões</p>
           </div>
-          <Button className="gold-gradient text-primary-foreground rounded-xl gap-2">
+          <Button
+            className="gold-gradient text-primary-foreground rounded-xl gap-2"
+            onClick={() => setShowSessionDialog(true)}
+          >
             <Plus className="h-4 w-4" />
             Nova Sessão
           </Button>
         </div>
+
+        <CreateSessionDialog
+          open={showSessionDialog}
+          onOpenChange={setShowSessionDialog}
+          patients={patients}
+          professionals={professionals}
+          onSave={createSession}
+        />
 
         {/* Search & Filters */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

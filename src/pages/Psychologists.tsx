@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { PageContainer } from "@/components/PageContainer";
 import { useClinic } from "@/contexts/ClinicContext";
@@ -7,14 +8,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, MoreVertical, Users, Calendar, Mail, Phone } from "lucide-react";
+import { Plus, Search, MoreVertical, Users, Calendar, Mail, Phone, Pencil, User, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ProfessionalFormDialog } from "@/components/professionals/ProfessionalFormDialog";
 import { useProfessionals } from "@/hooks/useProfessionals";
+import type { Professional } from "@/hooks/useProfessionals";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 
@@ -25,9 +38,13 @@ const statusMap = {
 };
 
 const Psychologists = () => {
+  const navigate = useNavigate();
   const { selectedClinic, userRole } = useClinic();
   const [search, setSearch] = useState("");
-  const { professionals, loading, error, refetch } = useProfessionals(selectedClinic?.id);
+  const { professionals, loading, error, refetch, createProfessional, updateProfessional, deleteProfessional } = useProfessionals(selectedClinic?.id);
+  const [showProfessionalDialog, setShowProfessionalDialog] = useState(false);
+  const [professionalToEdit, setProfessionalToEdit] = useState<Professional | null>(null);
+  const [professionalToRemove, setProfessionalToRemove] = useState<Professional | null>(null);
 
   const filtered = professionals
     .filter(
@@ -66,13 +83,50 @@ const Psychologists = () => {
         breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Clínicas", href: "/clinics" }, { label: "Profissionais" }]}
         actions={
           (userRole === "owner" || userRole === "admin") && (
-            <Button variant="gold" className="gap-2">
+            <Button
+              variant="gold"
+              className="gap-2"
+              onClick={() => { setProfessionalToEdit(null); setShowProfessionalDialog(true); }}
+            >
               <Plus className="h-4 w-4" />
               Adicionar Profissional
             </Button>
           )
         }
       >
+        <ProfessionalFormDialog
+          open={showProfessionalDialog}
+          onOpenChange={(o) => { setShowProfessionalDialog(o); if (!o) setProfessionalToEdit(null); }}
+          professional={professionalToEdit}
+          clinicId={selectedClinic?.id}
+          onCreate={createProfessional}
+          onUpdate={updateProfessional}
+        />
+
+        <AlertDialog open={!!professionalToRemove} onOpenChange={(o) => !o && setProfessionalToRemove(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remover profissional</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja remover <strong>{professionalToRemove?.name}</strong>?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  if (professionalToRemove && (await deleteProfessional(professionalToRemove.id))) {
+                    setProfessionalToRemove(null);
+                  }
+                }}
+              >
+                Remover
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Search */}
         <div className="relative max-w-md mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -113,11 +167,26 @@ const Psychologists = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="bg-card border-border">
-                              <DropdownMenuItem>Ver Perfil</DropdownMenuItem>
-                              <DropdownMenuItem>Editar</DropdownMenuItem>
-                              <DropdownMenuItem>Ver Agenda</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate(`/patients`)}>
+                                <User className="h-4 w-4 mr-2" />
+                                Ver Perfil
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => { setProfessionalToEdit(prof); setShowProfessionalDialog(true); }}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate("/calendar")}>
+                                <Calendar className="h-4 w-4 mr-2" />
+                                Ver Agenda
+                              </DropdownMenuItem>
                               {userRole === "owner" && (
-                                <DropdownMenuItem className="text-destructive">Remover</DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => setProfessionalToRemove(prof)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Remover
+                                </DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>

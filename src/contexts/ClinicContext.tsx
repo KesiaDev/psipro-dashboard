@@ -46,6 +46,10 @@ interface ClinicContextType {
   needsWorkspaceSelection: boolean;
   needsFirstClinic: boolean;
   confirmWorkspaceSelection: () => void;
+  /** ID da clínica para headers da API. Null até estar pronto. */
+  clinicId: string | null;
+  /** true quando requisições com x-clinic-id podem ser feitas */
+  isClinicReady: boolean;
 }
 
 const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
@@ -113,9 +117,13 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
       createdAt: "",
     });
 
+  const clinicId = typeof window !== "undefined" ? localStorage.getItem(CLINIC_ID_KEY) : null;
+  const isClinicReady =
+    !loading && !needsFirstClinic && !needsWorkspaceSelection && !!clinicId;
+
   return (
     <ClinicContext.Provider
-      value={{ clinics, selectedClinic, setSelectedClinicId, userRole, setUserRole, loading, error, refetch, createClinic, updateClinic, updateClinicStatus, needsWorkspaceSelection, needsFirstClinic, confirmWorkspaceSelection }}
+      value={{ clinics, selectedClinic, setSelectedClinicId, userRole, setUserRole, loading, error, refetch, createClinic, updateClinic, updateClinicStatus, needsWorkspaceSelection, needsFirstClinic, confirmWorkspaceSelection, clinicId, isClinicReady }}
     >
       {children}
     </ClinicContext.Provider>

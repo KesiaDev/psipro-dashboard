@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { WorkspaceSelectionModal } from "@/components/WorkspaceSelectionModal";
 import { CreateFirstClinicModal } from "@/components/CreateFirstClinicModal";
 import { useClinic } from "@/contexts/ClinicContext";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -14,7 +15,7 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayoutProps) {
-  const { needsWorkspaceSelection, needsFirstClinic } = useClinic();
+  const { needsWorkspaceSelection, needsFirstClinic, isClinicReady } = useClinic();
 
   return (
     <SidebarProvider>
@@ -39,7 +40,7 @@ export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayo
             </div>
           </header>
           <main className="flex-1 overflow-auto p-6">
-            {children}
+            {isClinicReady ? children : <LoadingSkeleton variant="page" />}
           </main>
         </div>
       </div>

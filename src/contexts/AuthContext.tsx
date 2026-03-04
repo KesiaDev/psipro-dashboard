@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { api, ApiError, CLINIC_ID_KEY } from "@/services/api";
+import { api, ApiError, CLINIC_ID_KEY, WORKSPACE_CHOSEN_KEY } from "@/services/api";
 
 export interface AuthUser {
   id: string;
@@ -72,10 +72,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem(AUTH_KEY, JSON.stringify({ id: userData?.id ?? email, email: userData?.email ?? email, ...userData }));
         setUser({ id: String(userData?.id ?? email), email: userData?.email ?? email, ...userData } as AuthUser);
         setSession({ access_token: token });
-        // Múltiplas clínicas: salvar a primeira para X-Clinic-Id
-        if (clinics?.length) {
-          localStorage.setItem(CLINIC_ID_KEY, clinics[0].id);
-        }
+        localStorage.removeItem(CLINIC_ID_KEY);
+        sessionStorage.removeItem(WORKSPACE_CHOSEN_KEY);
         return { error: null };
       }
       return { error: new Error("Resposta inválida do servidor") };
@@ -109,6 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(AUTH_KEY);
     localStorage.removeItem(CLINIC_ID_KEY);
+    sessionStorage.removeItem(WORKSPACE_CHOSEN_KEY);
     setUser(null);
     setSession(null);
   };

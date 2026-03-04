@@ -8,10 +8,11 @@
 import axios, { AxiosError } from "axios";
 
 const CLINIC_ID_KEY = "clinicId";
+const WORKSPACE_CHOSEN_KEY = "psipro_workspace_chosen";
 const TOKEN_KEY = "psipro_token";
 const USER_KEY = "psipro_user";
 
-export { CLINIC_ID_KEY };
+export { CLINIC_ID_KEY, WORKSPACE_CHOSEN_KEY };
 
 export interface ApiError {
   status: number;
@@ -59,6 +60,7 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
       localStorage.removeItem(CLINIC_ID_KEY);
+      sessionStorage.removeItem(WORKSPACE_CHOSEN_KEY);
       window.dispatchEvent(new CustomEvent("psipro:auth:401"));
     }
 

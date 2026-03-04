@@ -4,6 +4,8 @@ import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClinicSelector } from "@/components/ClinicSelector";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { WorkspaceSelectionModal } from "@/components/WorkspaceSelectionModal";
+import { useClinic } from "@/contexts/ClinicContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -11,6 +13,8 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayoutProps) {
+  const { needsWorkspaceSelection } = useClinic();
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
@@ -38,6 +42,7 @@ export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayo
           </main>
         </div>
       </div>
+      {needsWorkspaceSelection && <WorkspaceSelectionModal />}
     </SidebarProvider>
   );
 }

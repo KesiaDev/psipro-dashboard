@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useClinics, type CreateClinicInput } from "@/hooks/useClinics";
-import { CLINIC_ID_KEY } from "@/services/api";
+import { CLINIC_ID_KEY, WORKSPACE_CHOSEN_KEY } from "@/services/api";
 
 export type UserRole = "owner" | "admin" | "psychologist";
 
@@ -43,6 +43,8 @@ interface ClinicContextType {
   createClinic: (input: CreateClinicInput) => Promise<Clinic | null>;
   updateClinic: (id: string, input: Partial<CreateClinicInput>) => Promise<boolean>;
   updateClinicStatus: (id: string, status: "active" | "inactive") => Promise<boolean>;
+  needsWorkspaceSelection: boolean;
+  confirmWorkspaceSelection: () => void;
 }
 
 const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
@@ -51,20 +53,43 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
   const { clinics, loading, error, refetch, createClinic, updateClinic, updateClinicStatus } = useClinics();
   const [selectedClinicId, setSelectedClinicIdState] = useState<string>("");
   const [userRole, setUserRole] = useState<UserRole>("owner");
+  const [workspaceConfirmed, setWorkspaceConfirmed] = useState(false);
 
   const setSelectedClinicId = useCallback((id: string) => {
     setSelectedClinicIdState(id);
-    localStorage.setItem(CLINIC_ID_KEY, id);
-  }, []);
-
-  useEffect(() => {
-    if (clinics.length > 0 && !selectedClinicId) {
-      const stored = localStorage.getItem(CLINIC_ID_KEY);
-      const id = stored && clinics.some((c) => c.id === stored) ? stored : clinics[0].id;
-      setSelectedClinicIdState(id);
+    if (sessionStorage.getItem(WORKSPACE_CHOSEN_KEY)) {
       localStorage.setItem(CLINIC_ID_KEY, id);
     }
-  }, [clinics, selectedClinicId]);
+  }, []);
+
+  const needsWorkspaceSelection = clinics.length > 0 && !sessionStorage.getItem(WORKSPACE_CHOSEN_KEY) && !workspaceConfirmed;
+
+  const confirmWorkspaceSelection = useCallback(() => {
+    if (selectedClinicId) {
+      localStorage.setItem(CLINIC_ID_KEY, selectedClinicId);
+      sessionStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ clinicId: selectedClinicId, role: userRole }));
+      setWorkspaceConfirmed(true);
+    }
+  }, [selectedClinicId, userRole]);
+
+  useEffect(() => {
+    if (clinics.length === 0) return;
+    const ws = sessionStorage.getItem(WORKSPACE_CHOSEN_KEY);
+    if (ws) {
+      try {
+        const { clinicId, role } = JSON.parse(ws) as { clinicId?: string; role?: UserRole };
+        if (clinicId && clinics.some((c) => c.id === clinicId)) {
+          setSelectedClinicIdState(clinicId);
+          localStorage.setItem(CLINIC_ID_KEY, clinicId);
+          if (role && ["owner", "admin", "psychologist"].includes(role)) setUserRole(role);
+        }
+      } catch {
+        sessionStorage.removeItem(WORKSPACE_CHOSEN_KEY);
+      }
+    } else if (!selectedClinicId) {
+      setSelectedClinicIdState(clinics[0].id);
+    }
+  }, [clinics]);
 
   const selectedClinic =
     clinics.find((c) => c.id === selectedClinicId) || clinics[0] || ({
@@ -82,7 +107,7 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ClinicContext.Provider
-      value={{ clinics, selectedClinic, setSelectedClinicId, userRole, setUserRole, loading, error, refetch, createClinic, updateClinic, updateClinicStatus }}
+      value={{ clinics, selectedClinic, setSelectedClinicId, userRole, setUserRole, loading, error, refetch, createClinic, updateClinic, updateClinicStatus, needsWorkspaceSelection, confirmWorkspaceSelection }}
     >
       {children}
     </ClinicContext.Provider>

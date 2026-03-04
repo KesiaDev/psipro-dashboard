@@ -1,10 +1,28 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Phone, Mail, MoreHorizontal, FileSpreadsheet } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Search, Plus, Phone, Mail, MoreHorizontal, FileSpreadsheet, User, Pencil, Calendar, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { usePatients } from "@/hooks/usePatients";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
@@ -46,11 +64,13 @@ function formatDate(dateStr: string | null | undefined): string {
 }
 
 const Patients = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const { patients, loading, error, refetch, createPatient } = usePatients();
+  const { patients, loading, error, refetch, createPatient, deletePatient } = usePatients();
+  const [patientToDelete, setPatientToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const filtered = patients.filter((p) => {
     const name = p.full_name ?? p.name ?? "";
@@ -152,6 +172,30 @@ const Patients = () => {
           onSuccess={refetch}
         />
 
+        <AlertDialog open={!!patientToDelete} onOpenChange={(open) => !open && setPatientToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir paciente</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir <strong>{patientToDelete?.name}</strong>? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  if (patientToDelete && (await deletePatient(patientToDelete.id))) {
+                    setPatientToDelete(null);
+                  }
+                }}
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Patient List */}
         <div className="grid gap-3">
           {filtered.length === 0 ? (
@@ -215,13 +259,38 @@ const Patients = () => {
                   </div>
                 </div>
 
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-xl text-muted-foreground hover:text-foreground shrink-0"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-xl text-muted-foreground hover:text-foreground shrink-0"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[180px]">
+                    <DropdownMenuItem onClick={() => navigate(`/patients/${patient.id}`)}>
+                      <User className="h-4 w-4 mr-2" />
+                      Ver paciente
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => toast.info("Edição em breve")}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Editar paciente
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate(`/sessions?patientId=${patient.id}`)}>
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Ver sessões
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => setPatientToDelete({ id: patient.id, name: patient.full_name ?? patient.name ?? "—" })}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Excluir paciente
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ))
           )}

@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import Patients from "./pages/Patients";
+import PatientDetail from "./pages/PatientDetail";
 import Calendar from "./pages/Calendar";
 import Sessions from "./pages/Sessions";
 import Reports from "./pages/Reports";
@@ -43,6 +44,7 @@ const App = () => (
                 <Route path="/psychologists" element={<ProtectedRoute><Psychologists /></ProtectedRoute>} />
                 <Route path="/financials" element={<ProtectedRoute><Financials /></ProtectedRoute>} />
                 <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
+                <Route path="/patients/:id" element={<ProtectedRoute><PatientDetail /></ProtectedRoute>} />
                 <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
                 <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />

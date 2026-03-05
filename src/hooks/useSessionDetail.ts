@@ -93,7 +93,7 @@ export function useSessionDetail(id: string | undefined): UseSessionDetailState 
       const aiRaw =
         (data.aiAnalysis ?? data.ai_analysis ?? data.ai) as Record<string, unknown> | undefined;
       const aiFromTopLevel =
-        data.summary ?? data.themes ?? data.emotions || data.actionItems || data.riskFlags
+        (data.summary ?? data.themes ?? data.emotions ?? data.actionItems ?? data.riskFlags) != null
           ? (data as Record<string, unknown>)
           : undefined;
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
+import { useClinic } from "@/contexts/ClinicContext";
 
 export interface DashboardStats {
   patientsCount: number;
@@ -22,6 +23,7 @@ export interface DashboardStatsState {
 }
 
 export function useDashboardStats(): DashboardStatsState {
+  const { clinicId } = useClinic();
   const [data, setData] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
@@ -72,8 +74,14 @@ export function useDashboardStats(): DashboardStatsState {
   }, []);
 
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    if (clinicId) {
+      fetchStats();
+    } else {
+      setLoading(true);
+      setData(null);
+      setError(null);
+    }
+  }, [clinicId, fetchStats]);
 
   return { data, loading, error, refetch: fetchStats };
 }

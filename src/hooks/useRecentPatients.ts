@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
+import { useClinic } from "@/contexts/ClinicContext";
 
 export interface RecentPatient {
   name: string;
@@ -36,6 +37,7 @@ function formatShortDate(dateStr: string | null): string {
 }
 
 export function useRecentPatients(): UseRecentPatientsState {
+  const { clinicId } = useClinic();
   const [patients, setPatients] = useState<RecentPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
@@ -63,8 +65,14 @@ export function useRecentPatients(): UseRecentPatientsState {
   }, []);
 
   useEffect(() => {
-    fetchPatients();
-  }, [fetchPatients]);
+    if (clinicId) {
+      fetchPatients();
+    } else {
+      setLoading(true);
+      setPatients([]);
+      setError(null);
+    }
+  }, [clinicId, fetchPatients]);
 
   return { patients, loading, error, refetch: fetchPatients };
 }

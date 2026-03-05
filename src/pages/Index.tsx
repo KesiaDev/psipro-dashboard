@@ -13,7 +13,7 @@ import { useRecentPatients } from "@/hooks/useRecentPatients";
 const Index = () => {
   const { data: stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useDashboardStats();
   const { appointments, loading: appointmentsLoading, error: appointmentsError, refetch: refetchAppointments } = useTodayAppointments();
-  const { patients: recentPatients, loading: recentLoading, error: recentError } = useRecentPatients();
+  const { patients: recentPatients, loading: recentLoading, error: recentError, refetch: refetchRecent } = useRecentPatients();
 
   const loading = statsLoading || appointmentsLoading || recentLoading;
   const error = statsError || appointmentsError || recentError;
@@ -31,6 +31,7 @@ const Index = () => {
           onRetry={() => {
             refetchStats();
             refetchAppointments();
+            refetchRecent();
           }}
         />
       </DashboardLayout>

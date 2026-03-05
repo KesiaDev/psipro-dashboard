@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
+import { useClinic } from "@/contexts/ClinicContext";
 
 export interface TodayAppointment {
   id: string | number;
@@ -28,6 +29,7 @@ function getInitials(name: string): string {
 }
 
 export function useTodayAppointments(): UseTodayAppointmentsState {
+  const { clinicId } = useClinic();
   const [appointments, setAppointments] = useState<TodayAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
@@ -56,8 +58,14 @@ export function useTodayAppointments(): UseTodayAppointmentsState {
   }, []);
 
   useEffect(() => {
-    fetchAppointments();
-  }, [fetchAppointments]);
+    if (clinicId) {
+      fetchAppointments();
+    } else {
+      setLoading(true);
+      setAppointments([]);
+      setError(null);
+    }
+  }, [clinicId, fetchAppointments]);
 
   return { appointments, loading, error, refetch: fetchAppointments };
 }

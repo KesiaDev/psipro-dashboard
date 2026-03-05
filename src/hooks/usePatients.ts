@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
 import { toast } from "sonner";
+import { useClinic } from "@/contexts/ClinicContext";
 
 export interface Patient {
   id: string;
@@ -68,6 +69,7 @@ function mapPatient(raw: Record<string, unknown>): Patient {
 }
 
 export function usePatients(): UsePatientsState {
+  const { clinicId } = useClinic();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
@@ -88,8 +90,16 @@ export function usePatients(): UsePatientsState {
   }, []);
 
   useEffect(() => {
-    fetchPatients();
-  }, [fetchPatients]);
+    if (clinicId) fetchPatients();
+  }, [clinicId, fetchPatients]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && clinicId) fetchPatients();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [clinicId, fetchPatients]);
 
   const createPatient = useCallback(async (input: CreatePatientInput): Promise<Patient | null> => {
     try {

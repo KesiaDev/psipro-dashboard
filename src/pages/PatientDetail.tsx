@@ -4,9 +4,23 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePatient } from "@/hooks/usePatient";
+import { usePatientEvolution } from "@/hooks/usePatientEvolution";
+import { usePatientPatterns } from "@/hooks/usePatientPatterns";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
-import { ArrowLeft, Mail, Phone, Calendar, FileText, Clock } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Calendar, FileText, Clock, Sparkles, Heart, Tag, GitBranch, AlertTriangle } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   active: { label: "Ativo", className: "bg-accent text-accent-foreground" },
@@ -48,10 +62,14 @@ function formatTime(dateStr: string | null | undefined): string {
   }
 }
 
+const CHART_COLORS = ["hsl(42, 52%, 53%)", "hsl(158, 40%, 50%)", "hsl(210, 60%, 55%)", "hsl(350, 70%, 60%)"];
+
 const PatientDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { patient, loading, error, refetch } = usePatient(id);
+  const { evolution, loading: evolutionLoading } = usePatientEvolution(id);
+  const { patterns, loading: patternsLoading } = usePatientPatterns(id);
 
   if (error) {
     const err = error as { status?: number; message?: string };
@@ -186,7 +204,8 @@ const PatientDetail = () => {
               {sessionsList.map((session) => (
                 <div
                   key={String(session.id)}
-                  className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow"
+                  onClick={() => navigate(`/sessions/${session.id}`)}
+                  className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer"
                 >
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
@@ -213,6 +232,257 @@ const PatientDetail = () => {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Evolução terapêutica */}
+        <div className="space-y-4">
+          <h2 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Evolução terapêutica
+          </h2>
+
+          {evolutionLoading ? (
+            <div className="card-soft p-8">
+              <LoadingSkeleton variant="list" />
+            </div>
+          ) : evolution ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Temas recorrentes */}
+                <div className="card-soft p-6">
+                  <h3 className="font-heading text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-primary" />
+                    Temas recorrentes
+                  </h3>
+                  {evolution.recurringThemes.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {evolution.recurringThemes.map((theme, i) => (
+                        <Badge
+                          key={i}
+                          variant="secondary"
+                          className="rounded-lg bg-primary/10 text-primary border-primary/20"
+                        >
+                          {theme}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Os temas serão identificados conforme as sessões forem analisadas pela IA.
+                    </p>
+                  )}
+                </div>
+
+                {/* Emoções mais frequentes */}
+                <div className="card-soft p-6">
+                  <h3 className="font-heading text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Heart className="h-4 w-4 text-primary" />
+                    Emoções mais frequentes
+                  </h3>
+                  {evolution.frequentEmotions.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {evolution.frequentEmotions.map((emotion, i) => (
+                        <Badge
+                          key={i}
+                          variant="secondary"
+                          className="rounded-lg bg-chart-amber/20 text-chart-amber border-chart-amber/30"
+                        >
+                          {emotion}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      As emoções serão mapeadas conforme as sessões forem analisadas pela IA.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Gráfico de emoções por sessão */}
+              {evolution.emotionsBySession.length > 0 && (
+                <div className="card-soft p-6">
+                  <h3 className="font-heading text-base font-semibold text-foreground mb-6">
+                    Emoções por sessão
+                  </h3>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart
+                      data={evolution.emotionsBySession.map((s) => ({
+                        sessao: s.sessionDate
+                          ? new Date(s.sessionDate).toLocaleDateString("pt-BR", {
+                              day: "2-digit",
+                              month: "short",
+                            })
+                          : String(s.sessionId),
+                        emocoes: s.emotions.length,
+                        total: s.emotions.length,
+                      }))}
+                      margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis
+                        dataKey="sessao"
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "12px",
+                          color: "hsl(var(--foreground))",
+                          fontSize: "12px",
+                        }}
+                        formatter={(value: number, _: unknown, props: { payload?: { sessao: string } }) => [
+                          `${value} emoção(ões) detectada(s)`,
+                          props?.payload?.sessao ?? "",
+                        ]}
+                      />
+                      <Bar dataKey="emocoes" radius={[6, 6, 0, 0]}>
+                        {evolution.emotionsBySession.map((_, i) => (
+                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="card-soft p-8 text-center">
+              <p className="text-muted-foreground">
+                Os dados de evolução terapêutica serão exibidos conforme as sessões forem analisadas pela IA.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Padrões Terapêuticos */}
+        <div className="space-y-4">
+          <h2 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
+            <GitBranch className="h-5 w-5 text-primary" />
+            Padrões Terapêuticos
+          </h2>
+
+          {patternsLoading ? (
+            <div className="card-soft p-8">
+              <LoadingSkeleton variant="list" />
+            </div>
+          ) : patterns ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Temas dominantes */}
+                <Card className="card-soft border-border overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-primary" />
+                      Temas dominantes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {patterns.dominantThemes.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {patterns.dominantThemes.map((theme, i) => (
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="rounded-lg bg-primary/10 text-primary border-primary/20"
+                          >
+                            {theme}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhum tema dominante identificado ainda.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Emoções predominantes */}
+                <Card className="card-soft border-border overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Heart className="h-4 w-4 text-primary" />
+                      Emoções predominantes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {patterns.predominantEmotions.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {patterns.predominantEmotions.map((emotion, i) => (
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="rounded-lg bg-chart-amber/20 text-chart-amber border-chart-amber/30"
+                          >
+                            {emotion}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhuma emoção predominante identificada ainda.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Padrões detectados */}
+              <Card className="card-soft border-border overflow-hidden">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <GitBranch className="h-4 w-4 text-primary" />
+                    Padrões detectados
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {patterns.detectedPatterns.length > 0 ? (
+                    <ul className="space-y-2">
+                      {patterns.detectedPatterns.map((pattern, i) => (
+                        <li key={i} className="text-sm text-foreground flex items-center gap-2">
+                          <span className="text-primary">•</span>
+                          {pattern}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Os padrões serão identificados conforme o acompanhamento evolua.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Alertas terapêuticos */}
+              {patterns.therapeuticAlerts.length > 0 && (
+                <div className="space-y-2">
+                  {patterns.therapeuticAlerts.map((alert, i) => (
+                    <Alert key={i} variant="destructive" className="rounded-2xl border-destructive/30">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Alerta terapêutico</AlertTitle>
+                      <AlertDescription>{alert}</AlertDescription>
+                    </Alert>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="card-soft p-8 text-center">
+              <p className="text-muted-foreground">
+                Os padrões terapêuticos serão exibidos conforme as sessões forem analisadas pela IA.
+              </p>
             </div>
           )}
         </div>

@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Plus, Phone, Mail, MoreHorizontal, FileSpreadsheet, User, Pencil, Calendar, Trash2 } from "lucide-react";
+import { Search, Plus, Phone, Mail, MoreHorizontal, FileSpreadsheet, User, Pencil, Calendar, Trash2, RefreshCw } from "lucide-react";
 import { usePatients } from "@/hooks/usePatients";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
@@ -75,8 +75,14 @@ const Patients = () => {
   const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
 
   const filtered = patients.filter((p) => {
-    const name = p.full_name ?? p.name ?? "";
-    const matchesSearch = name.toLowerCase().includes(search.toLowerCase());
+    const name = (p.full_name ?? p.name ?? "").toLowerCase();
+    const phone = (p.phone ?? "").replace(/\D/g, "");
+    const searchLower = search.toLowerCase().trim();
+    const searchDigits = search.replace(/\D/g, "");
+    const matchesSearch =
+      !searchLower ||
+      name.includes(searchLower) ||
+      (searchDigits.length >= 2 && phone.includes(searchDigits));
     const matchesFilter = filter === "all" || p.status === filter;
     return matchesSearch && matchesFilter;
   });
@@ -113,6 +119,16 @@ const Patients = () => {
             <p className="text-sm text-muted-foreground">{patients.length} pacientes cadastrados</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-xl shrink-0"
+              onClick={() => refetch()}
+              disabled={loading}
+              title="Atualizar lista"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            </Button>
             <AddPatientDialog
               open={showAddDialog}
               onOpenChange={setShowAddDialog}

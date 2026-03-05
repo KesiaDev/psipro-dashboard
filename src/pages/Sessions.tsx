@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useClinic } from "@/contexts/ClinicContext";
 import { usePatients } from "@/hooks/usePatients";
@@ -21,6 +22,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 const Sessions = () => {
+  const navigate = useNavigate();
   const { selectedClinic } = useClinic();
   const { patients } = usePatients();
   const { professionals } = useProfessionals(selectedClinic?.id);
@@ -133,6 +135,7 @@ const Sessions = () => {
                   {dateSessions.map((session) => (
                     <div
                       key={session.id}
+                      onClick={() => navigate(`/sessions/${session.id}`)}
                       className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group"
                     >
                       <Avatar className="h-10 w-10">

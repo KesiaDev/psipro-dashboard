@@ -107,12 +107,12 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
       }
       try {
         const payload: Record<string, unknown> = {
-          patient_id: input.patient_id,
-          scheduled_at: input.scheduled_at,
-          clinic_id: clinicId,
+          patientId: input.patient_id,
+          scheduledAt: input.scheduled_at,
+          clinicId,
         };
-        if (input.professional_id != null) payload.professional_id = input.professional_id;
-        if (input.duration_minutes != null) payload.duration_minutes = input.duration_minutes;
+        if (input.professional_id != null) payload.professionalId = input.professional_id;
+        if (input.duration_minutes != null) payload.durationMinutes = input.duration_minutes;
         if (input.type != null) payload.type = input.type;
         if (input.status != null) payload.status = input.status;
         await api.post("/appointments", payload);

@@ -115,14 +115,14 @@ export function useSessionsData(): UseSessionsDataState {
     async (input: CreateSessionInput): Promise<boolean> => {
       try {
         // Backend NestJS espera camelCase (como em appointments)
+        // Backend aceita apenas: patientId, date, professionalId, notes
         const payload: Record<string, unknown> = {
           patientId: input.patient_id,
           date: input.scheduled_at, // ISO 8601
         };
         if (input.professional_id) payload.professionalId = input.professional_id;
-        if (input.duration_minutes != null) payload.durationMinutes = input.duration_minutes;
-        if (input.type) payload.sessionType = input.type;
         if (input.notes) payload.notes = input.notes;
+        // duration e type não são aceitos pelo DTO de criação
         // clinicId vai no header X-Clinic-Id, não no body
         await api.post("/sessions", payload);
         toast.success("Sessão criada com sucesso");

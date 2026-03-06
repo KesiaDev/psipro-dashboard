@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ClinicProvider } from "@/contexts/ClinicContext";
+import { ClinicGate } from "@/components/ClinicGate";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ThemeProvider } from "next-themes";
@@ -40,17 +41,17 @@ const App = () => (
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                <Route path="/clinics" element={<ProtectedRoute><Clinics /></ProtectedRoute>} />
-                <Route path="/psychologists" element={<ProtectedRoute><Psychologists /></ProtectedRoute>} />
-                <Route path="/financials" element={<ProtectedRoute><Financials /></ProtectedRoute>} />
-                <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
-                <Route path="/patients/:id" element={<ProtectedRoute><PatientDetail /></ProtectedRoute>} />
-                <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
-                <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
-                <Route path="/sessions/:id" element={<ProtectedRoute><SessionDetail /></ProtectedRoute>} />
-                <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/" element={<ProtectedRoute><ClinicGate><Index /></ClinicGate></ProtectedRoute>} />
+                <Route path="/clinics" element={<ProtectedRoute><ClinicGate><Clinics /></ClinicGate></ProtectedRoute>} />
+                <Route path="/psychologists" element={<ProtectedRoute><ClinicGate><Psychologists /></ClinicGate></ProtectedRoute>} />
+                <Route path="/financials" element={<ProtectedRoute><ClinicGate><Financials /></ClinicGate></ProtectedRoute>} />
+                <Route path="/patients" element={<ProtectedRoute><ClinicGate><Patients /></ClinicGate></ProtectedRoute>} />
+                <Route path="/patients/:id" element={<ProtectedRoute><ClinicGate><PatientDetail /></ClinicGate></ProtectedRoute>} />
+                <Route path="/calendar" element={<ProtectedRoute><ClinicGate><Calendar /></ClinicGate></ProtectedRoute>} />
+                <Route path="/sessions" element={<ProtectedRoute><ClinicGate><Sessions /></ClinicGate></ProtectedRoute>} />
+                <Route path="/sessions/:id" element={<ProtectedRoute><ClinicGate><SessionDetail /></ClinicGate></ProtectedRoute>} />
+                <Route path="/reports" element={<ProtectedRoute><ClinicGate><Reports /></ClinicGate></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><ClinicGate><Settings /></ClinicGate></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </ClinicProvider>

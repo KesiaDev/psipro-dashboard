@@ -110,15 +110,36 @@ export function usePatients(): UsePatientsState {
 
   const createPatient = useCallback(async (input: CreatePatientInput): Promise<Patient | null> => {
     try {
-      const res = await api.post<Patient | Record<string, unknown>>("/patients", input);
+      // Tenta snake_case (comum em Prisma/PostgreSQL); backend pode esperar camelCase
+      const payload: Record<string, unknown> = {
+        full_name: input.full_name?.trim() ?? "",
+        status: input.status ?? "active",
+      };
+      if (input.email?.trim()) payload.email = input.email.trim();
+      if (input.phone?.trim()) payload.phone = input.phone.trim();
+      if (input.date_of_birth?.trim()) payload.date_of_birth = input.date_of_birth.trim();
+      if (input.cpf?.trim()) payload.cpf = input.cpf.trim();
+      if (input.notes?.trim()) payload.notes = input.notes.trim();
+      const res = await api.post<Patient | Record<string, unknown>>("/patients", payload);
       toast.success("Paciente criado com sucesso");
       await fetchPatients();
       return mapPatient((res as Record<string, unknown>) ?? {});
     } catch (err) {
-      toast.error("Erro ao criar paciente");
-      return null;
+      const apiErr = err as ApiError;
+      const msg = apiErr.message ?? "Erro ao criar paciente";
+      toast.error(msg);
+      throw err; // Propaga para o modal exibir a mensagem real
     }
   }, [fetchPatients]);
+
+  const getDeleteErrorMessage = (err: ApiError): string => {
+    if (err.status === 404) {
+      return "Endpoint não encontrado (404). O backend pode não ter DELETE /patients/:id implementado.";
+    }
+    if (err.status === 403) return "Sem permissão para excluir.";
+    if (err.status === 401) return "Sessão expirada. Faça login novamente.";
+    return err.message ?? "Erro ao excluir paciente.";
+  };
 
   const deletePatient = useCallback(async (id: string): Promise<boolean> => {
     try {
@@ -126,8 +147,9 @@ export function usePatients(): UsePatientsState {
       toast.success("Paciente excluído com sucesso");
       await fetchPatients();
       return true;
-    } catch {
-      toast.error("Erro ao excluir paciente");
+    } catch (err) {
+      const apiErr = err as ApiError;
+      toast.error(getDeleteErrorMessage(apiErr));
       return false;
     }
   }, [fetchPatients]);
@@ -136,12 +158,14 @@ export function usePatients(): UsePatientsState {
     if (ids.length === 0) return { success: 0, failed: 0 };
     let success = 0;
     let failed = 0;
+    let lastError: ApiError | null = null;
     for (const id of ids) {
       try {
         await api.delete(`/patients/${id}`);
         success++;
-      } catch {
+      } catch (err) {
         failed++;
+        lastError = err as ApiError;
       }
     }
     if (success > 0) {
@@ -149,8 +173,9 @@ export function usePatients(): UsePatientsState {
         ? `${success} paciente(s) excluído(s). ${failed} falharam.`
         : `${success} paciente(s) excluído(s) com sucesso.`);
       await fetchPatients();
-    } else if (failed > 0) {
-      toast.error("Erro ao excluir pacientes.");
+    }
+    if (failed > 0) {
+      toast.error(lastError ? getDeleteErrorMessage(lastError) : "Erro ao excluir pacientes.");
     }
     return { success, failed };
   }, [fetchPatients]);

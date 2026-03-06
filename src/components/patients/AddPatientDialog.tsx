@@ -47,8 +47,9 @@ export function AddPatientDialog({ open, onOpenChange, onSave }: Props) {
       } else {
         setError("Não foi possível criar o paciente.");
       }
-    } catch {
-      setError("Erro ao criar paciente.");
+    } catch (err) {
+      const msg = (err as { message?: string })?.message ?? "Erro ao criar paciente.";
+      setError(msg);
     } finally {
       setSaving(false);
     }

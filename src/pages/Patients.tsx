@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Plus, Phone, Mail, MoreHorizontal, FileSpreadsheet, User, Pencil, Calendar, Trash2, RefreshCw } from "lucide-react";
 import { usePatients } from "@/hooks/usePatients";
 import { VOICE_EVENT_FOCUS_PATIENT_SEARCH } from "@/components/VoiceCommandButton";
@@ -72,9 +73,11 @@ const Patients = () => {
   const [filter, setFilter] = useState<string>("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const { patients, loading, error, refetch, createPatient, deletePatient } = usePatients();
+  const { patients, loading, error, refetch, createPatient, deletePatient, deleteManyPatients } = usePatients();
   const [patientToDelete, setPatientToDelete] = useState<{ id: string; name: string } | null>(null);
   const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteMode, setBulkDeleteMode] = useState<"selected" | "all" | null>(null);
 
   useEffect(() => {
     const handler = () => searchInputRef.current?.focus();
@@ -204,6 +207,66 @@ const Patients = () => {
           onSuccess={refetch}
         />
 
+        {/* Barra de exclusão em lote */}
+        {filtered.length > 0 && (
+          <div className="card-soft p-4 flex flex-wrap items-center gap-3">
+            <Checkbox
+              id="select-all"
+              checked={
+                selectedIds.size === 0
+                  ? false
+                  : selectedIds.size === filtered.length
+                    ? true
+                    : "indeterminate"
+              }
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  setSelectedIds(new Set(filtered.map((p) => p.id)));
+                } else {
+                  setSelectedIds(new Set());
+                }
+              }}
+              aria-label="Selecionar todos os pacientes"
+            />
+            <label htmlFor="select-all" className="text-sm text-muted-foreground cursor-pointer">
+              Selecionar todos ({filtered.length})
+            </label>
+            {selectedIds.size > 0 && (
+              <>
+                <span className="text-sm font-medium text-foreground">
+                  {selectedIds.size} selecionado(s)
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => setBulkDeleteMode("selected")}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Excluir selecionados
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => setBulkDeleteMode("all")}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Excluir todos
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => { setSelectedIds(new Set()); setBulkDeleteMode(null); }}
+                >
+                  Desmarcar
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+
         {patientToEdit && (
           <EditPatientModal
             open={!!patientToEdit}
@@ -238,6 +301,58 @@ const Patients = () => {
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* Confirmação: excluir selecionados */}
+        <AlertDialog open={bulkDeleteMode === "selected"} onOpenChange={(open) => !open && setBulkDeleteMode(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir pacientes selecionados</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir <strong>{selectedIds.size} paciente(s)</strong>? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  const ids = Array.from(selectedIds);
+                  await deleteManyPatients(ids);
+                  setSelectedIds(new Set());
+                  setBulkDeleteMode(null);
+                }}
+              >
+                Excluir {selectedIds.size}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Confirmação: excluir todos */}
+        <AlertDialog open={bulkDeleteMode === "all"} onOpenChange={(open) => !open && setBulkDeleteMode(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir todos os pacientes</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir <strong>todos os {filtered.length} paciente(s)</strong> da lista? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  const ids = filtered.map((p) => p.id);
+                  await deleteManyPatients(ids);
+                  setSelectedIds(new Set());
+                  setBulkDeleteMode(null);
+                }}
+              >
+                Excluir todos
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Patient List */}
         <div className="grid gap-3">
           {filtered.length === 0 ? (
@@ -251,6 +366,24 @@ const Patients = () => {
                 className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow animate-fade-in"
                 style={{ animationDelay: `${i * 0.05}s` }}
               >
+                <div
+                  className="shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
+                  <Checkbox
+                    checked={selectedIds.has(patient.id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        if (checked) next.add(patient.id);
+                        else next.delete(patient.id);
+                        return next;
+                      });
+                    }}
+                    aria-label={`Selecionar ${patient.full_name ?? patient.name ?? "—"}`}
+                  />
+                </div>
                 <div
                   className="flex-1 min-w-0 flex items-center gap-4 cursor-pointer"
                   onClick={() => navigate(`/patients/${patient.id}`)}

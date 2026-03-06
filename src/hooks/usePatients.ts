@@ -42,6 +42,7 @@ export interface UsePatientsState {
   refetch: () => Promise<void>;
   createPatient: (input: CreatePatientInput) => Promise<Patient | null>;
   deletePatient: (id: string) => Promise<boolean>;
+  deleteManyPatients: (ids: string[]) => Promise<{ success: number; failed: number }>;
 }
 
 function mapPatient(raw: Record<string, unknown>): Patient {
@@ -131,5 +132,28 @@ export function usePatients(): UsePatientsState {
     }
   }, [fetchPatients]);
 
-  return { patients, loading, error, refetch: fetchPatients, createPatient, deletePatient };
+  const deleteManyPatients = useCallback(async (ids: string[]): Promise<{ success: number; failed: number }> => {
+    if (ids.length === 0) return { success: 0, failed: 0 };
+    let success = 0;
+    let failed = 0;
+    for (const id of ids) {
+      try {
+        await api.delete(`/patients/${id}`);
+        success++;
+      } catch {
+        failed++;
+      }
+    }
+    if (success > 0) {
+      toast.success(failed > 0
+        ? `${success} paciente(s) excluído(s). ${failed} falharam.`
+        : `${success} paciente(s) excluído(s) com sucesso.`);
+      await fetchPatients();
+    } else if (failed > 0) {
+      toast.error("Erro ao excluir pacientes.");
+    }
+    return { success, failed };
+  }, [fetchPatients]);
+
+  return { patients, loading, error, refetch: fetchPatients, createPatient, deletePatient, deleteManyPatients };
 }

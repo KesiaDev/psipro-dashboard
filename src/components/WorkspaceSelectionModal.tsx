@@ -14,7 +14,7 @@ import { useClinic, type UserRole } from "@/contexts/ClinicContext";
 const roleLabels: Record<UserRole, { label: string; icon: React.ElementType }> = {
   owner: { label: "Proprietário", icon: Crown },
   admin: { label: "Administrador", icon: Shield },
-  psychologist: { label: "Psicólogo", icon: User },
+  psychologist: { label: "Profissional", icon: User },
 };
 
 export function WorkspaceSelectionModal() {

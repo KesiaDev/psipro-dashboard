@@ -79,7 +79,7 @@ const Psychologists = () => {
     <DashboardLayout title="Profissionais">
       <PageContainer
         title={`Profissionais — ${selectedClinic?.name ?? "—"}`}
-        subtitle="Gerencie os psicólogos vinculados a esta clínica"
+        subtitle="Gerencie os profissionais vinculados a esta clínica"
         breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Clínicas", href: "/clinics" }, { label: "Profissionais" }]}
         actions={
           (userRole === "owner" || userRole === "admin") && (

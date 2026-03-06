@@ -8,6 +8,7 @@ export interface Profile {
   email: string;
   phone: string;
   crp?: string;
+  professionalType?: string;
   specialties?: string;
   avatar_url?: string;
 }
@@ -32,6 +33,7 @@ function mapProfile(raw: Record<string, unknown>): Profile {
     email: (raw.email as string) ?? "",
     phone: (raw.phone as string) ?? "",
     crp: (raw.crp as string) ?? undefined,
+    professionalType: (raw.professionalType as string) ?? (raw.professional_type as string) ?? undefined,
     specialties: (raw.specialties as string) ?? (raw.specialty as string) ?? undefined,
     avatar_url: (raw.avatar_url as string) ?? undefined,
   };

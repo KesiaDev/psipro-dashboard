@@ -58,27 +58,29 @@
     --font-body: 'Inter', sans-serif;
   }
 
-  /* Modo baixa visão: alto contraste (compatível com dark mode) */
+  /* Modo baixa visão: alto contraste (compatível com dark mode) - evita preto puro */
   .high-contrast {
-    --background: 0 0% 0%;
-    --foreground: 48 100% 50%;
-    --card: 0 0% 0%;
-    --card-foreground: 48 100% 50%;
-    --muted: 0 0% 5%;
-    --muted-foreground: 48 100% 60%;
-    --border: 48 100% 40%;
-    --primary: 48 100% 50%;
-    --primary-foreground: 0 0% 0%;
-    --accent: 48 100% 50%;
-    --accent-foreground: 0 0% 0%;
-    --secondary: 0 0% 8%;
-    --secondary-foreground: 48 100% 50%;
+    --background: 0 0% 4%;
+    --foreground: 48 100% 55%;
+    --card: 0 0% 6%;
+    --card-foreground: 48 100% 55%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 48 100% 65%;
+    --border: 48 100% 45%;
+    --primary: 48 100% 55%;
+    --primary-foreground: 0 0% 4%;
+    --accent: 48 100% 55%;
+    --accent-foreground: 0 0% 4%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 48 100% 55%;
     --destructive-foreground: 0 0% 100%;
-    --sidebar-background: 0 0% 0%;
-    --sidebar-foreground: 48 100% 50%;
-    --sidebar-accent: 48 80% 20%;
+    --input: 0 0% 10%;
+    --ring: 48 100% 55%;
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 48 100% 55%;
+    --sidebar-accent: 48 80% 15%;
     --sidebar-accent-foreground: 48 100% 70%;
-    --sidebar-border: 48 100% 40%;
+    --sidebar-border: 48 100% 45%;
   }
   /* Modo baixa visão: fonte ampliada */
   .large-font {

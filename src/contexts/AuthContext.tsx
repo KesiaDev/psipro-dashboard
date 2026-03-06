@@ -14,7 +14,7 @@ interface AuthContextType {
   user: AuthUser | null;
   session: { access_token: string } | null;
   loading: boolean;
-  signUp: (email: string, password: string, metadata: { first_name: string; last_name: string; crp: string }) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, metadata: { first_name: string; last_name: string; crp: string; professionalType?: string }) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithHandoff: (token: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -116,7 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (
     email: string,
     password: string,
-    metadata: { first_name: string; last_name: string; crp: string }
+    metadata: { first_name: string; last_name: string; crp: string; professionalType?: string }
   ) => {
     try {
       await api.post("/auth/register", {
@@ -125,6 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         firstName: metadata.first_name,
         lastName: metadata.last_name,
         crp: metadata.crp,
+        professionalType: metadata.professionalType ?? "Psicólogo",
       });
       return { error: null };
     } catch (err) {

@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,7 +27,7 @@ function getInitials(name: string): string {
 const Settings = () => {
   const { profile, loading, error, refetch, updateProfile, updatePassword } = useProfile();
   const { highContrast, enlargedFont, textSpacing, largeButtons, setHighContrast, setEnlargedFont, setTextSpacing, setLargeButtons } = useAccessibility();
-  const [profileForm, setProfileForm] = useState({ name: "", crp: "", email: "", phone: "", specialties: "" });
+  const [profileForm, setProfileForm] = useState({ name: "", crp: "", professionalType: "", email: "", phone: "", specialties: "" });
   const [profileSaving, setProfileSaving] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
@@ -44,6 +45,7 @@ const Settings = () => {
       setProfileForm({
         name: profile.name ?? "",
         crp: profile.crp ?? "",
+        professionalType: profile.professionalType ?? "",
         email: profile.email ?? "",
         phone: profile.phone ?? "",
         specialties: profile.specialties ?? "",
@@ -143,7 +145,9 @@ const Settings = () => {
                 <div>
                   <p className="font-heading text-lg font-semibold text-foreground">{profileForm.name || "Usuário"}</p>
                   <p className="text-sm text-muted-foreground">
-                    {profileForm.crp ? `${profileForm.crp} · ` : ""}Perfil
+                    {profileForm.professionalType || profileForm.crp
+                      ? [profileForm.professionalType, profileForm.crp].filter(Boolean).join(" · ")
+                      : "Perfil"}
                   </p>
                 </div>
               </div>
@@ -158,6 +162,22 @@ const Settings = () => {
                     className="input-premium"
                     aria-label="Nome completo"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profile-professional-type" className="text-sm text-muted-foreground">Tipo de profissional</Label>
+                  <Select
+                    value={profileForm.professionalType || "Psicólogo"}
+                    onValueChange={(v) => setProfileForm((p) => ({ ...p, professionalType: v }))}
+                  >
+                    <SelectTrigger id="profile-professional-type" className="input-premium" aria-label="Tipo de profissional">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["Psicólogo", "Terapeuta", "Psicanalista", "Conselheiro", "Coach", "Outro"].map((t) => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="profile-crp" className="text-sm text-muted-foreground">CRP</Label>

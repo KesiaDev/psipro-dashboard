@@ -59,8 +59,9 @@ export function AppSidebar() {
   const { profile } = useProfile();
 
   const displayName = profile?.name?.trim() || "";
+  const displayProfessionalType = profile?.professionalType?.trim() || "";
   const displayCrp = profile?.crp?.trim() || "";
-  const hasProfile = displayName || displayCrp;
+  const hasProfile = displayName || displayProfessionalType || displayCrp;
 
   const handleLogout = () => {
     navigate("/login");
@@ -136,7 +137,7 @@ export function AppSidebar() {
               {hasProfile ? displayName : "Configurar perfil"}
             </p>
             <p className="text-xs text-muted-foreground truncate">
-              {displayCrp || (hasProfile ? "" : "Adicione nome e CRP em Configurações")}
+              {displayProfessionalType || displayCrp || (hasProfile ? "" : "Adicione nome em Configurações")}
             </p>
           </div>
           <button

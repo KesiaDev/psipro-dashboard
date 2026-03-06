@@ -3,15 +3,19 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Eye, EyeOff } from "lucide-react";
 import { PsiProLogo } from "@/components/PsiProLogo";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
+const PROFESSIONAL_TYPES = ["Psicólogo", "Terapeuta", "Psicanalista", "Conselheiro", "Coach", "Outro"] as const;
+
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [professionalType, setProfessionalType] = useState<string>(PROFESSIONAL_TYPES[0]);
   const [crp, setCrp] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +31,7 @@ const Register = () => {
       return;
     }
     setLoading(true);
-    const { error } = await signUp(email, password, { first_name: firstName, last_name: lastName, crp });
+    const { error } = await signUp(email, password, { first_name: firstName, last_name: lastName, crp, professionalType });
     setLoading(false);
     if (error) {
       toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
@@ -61,8 +65,23 @@ const Register = () => {
               </div>
             </div>
             <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Tipo de profissional</Label>
+              <Select value={professionalType} onValueChange={setProfessionalType}>
+                <SelectTrigger className="input-premium h-11" aria-label="Selecionar tipo de profissional">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROFESSIONAL_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">CRP</Label>
-              <Input placeholder="06/12345" value={crp} onChange={(e) => setCrp(e.target.value)} className="input-premium h-11" required />
+              <Input placeholder="06/12345" value={crp} onChange={(e) => setCrp(e.target.value)} className="input-premium h-11" />
             </div>
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">E-mail</Label>

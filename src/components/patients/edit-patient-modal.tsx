@@ -89,20 +89,25 @@ export function EditPatientModal({ open, onOpenChange, patientId, patientData, o
     if (!validate()) return;
     setSaving(true);
     try {
-      await api.put(`/patients/${patientId}`, {
-        full_name: form.full_name.trim(),
-        email: form.email?.trim() || null,
-        phone: form.phone?.trim() || null,
-        date_of_birth: form.date_of_birth || null,
-        gender: form.gender || null,
+      // Backend NestJS espera camelCase (como em sessions e appointments)
+      const payload: Record<string, unknown> = {
+        fullName: form.full_name.trim(),
         status: form.status,
-      });
+      };
+      payload.email = form.email?.trim() || null;
+      payload.phone = form.phone?.trim() || null;
+      payload.dateOfBirth = form.date_of_birth
+        ? new Date(form.date_of_birth + "T00:00:00").toISOString()
+        : null;
+      payload.gender = form.gender || null;
+      await api.put(`/patients/${patientId}`, payload);
       toast.success("Paciente atualizado com sucesso");
       onOpenChange(false);
       onSuccess?.();
-    } catch {
-      setError("Erro ao atualizar paciente.");
-      toast.error("Erro ao atualizar paciente");
+    } catch (err) {
+      const msg = (err as { message?: string })?.message ?? "Erro ao atualizar paciente.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

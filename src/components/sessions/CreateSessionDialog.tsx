@@ -25,7 +25,8 @@ interface Props {
 export function CreateSessionDialog({ open, onOpenChange, patients, professionals, onSave }: Props) {
   const [patientId, setPatientId] = useState("");
   const [professionalId, setProfessionalId] = useState("");
-  const [scheduledAt, setScheduledAt] = useState("");
+  const [dateStr, setDateStr] = useState("");
+  const [timeStr, setTimeStr] = useState("09:00");
   const [duration, setDuration] = useState(50);
   const [type, setType] = useState("Consulta");
   const [notes, setNotes] = useState("");
@@ -37,7 +38,8 @@ export function CreateSessionDialog({ open, onOpenChange, patients, professional
     setProfessionalId("");
     const d = new Date();
     d.setHours(9, 0, 0, 0);
-    setScheduledAt(d.toISOString().slice(0, 16));
+    setDateStr(d.toISOString().slice(0, 10));
+    setTimeStr(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
     setDuration(50);
     setType("Consulta");
     setNotes("");
@@ -55,7 +57,7 @@ export function CreateSessionDialog({ open, onOpenChange, patients, professional
       setError("Selecione o paciente.");
       return;
     }
-    if (!scheduledAt) {
+    if (!dateStr || !timeStr) {
       setError("Data e hora são obrigatórios.");
       return;
     }
@@ -65,7 +67,7 @@ export function CreateSessionDialog({ open, onOpenChange, patients, professional
       const ok = await onSave({
         patient_id: patientId,
         professional_id: professionalId && professionalId !== "_empty" ? professionalId : undefined,
-        scheduled_at: new Date(scheduledAt).toISOString(),
+        scheduled_at: new Date(`${dateStr}T${timeStr}`).toISOString(),
         duration_minutes: duration,
         type,
         notes: notes.trim() || undefined,
@@ -116,14 +118,29 @@ export function CreateSessionDialog({ open, onOpenChange, patients, professional
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Data e hora *</Label>
-            <Input
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-              className="rounded-xl"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="session-date">Data *</Label>
+              <Input
+                id="session-date"
+                type="date"
+                value={dateStr}
+                onChange={(e) => setDateStr(e.target.value)}
+                className="rounded-xl"
+                aria-label="Data da sessão"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="session-time">Hora *</Label>
+              <Input
+                id="session-time"
+                type="time"
+                value={timeStr}
+                onChange={(e) => setTimeStr(e.target.value)}
+                className="rounded-xl"
+                aria-label="Hora da sessão (ex: 14:30)"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Duração (minutos)</Label>

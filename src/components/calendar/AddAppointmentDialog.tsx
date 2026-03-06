@@ -33,7 +33,8 @@ export function AddAppointmentDialog({
 }: Props) {
   const [patientId, setPatientId] = useState("");
   const [professionalId, setProfessionalId] = useState("");
-  const [scheduledAt, setScheduledAt] = useState("");
+  const [dateStr, setDateStr] = useState("");
+  const [timeStr, setTimeStr] = useState("09:00");
   const [duration, setDuration] = useState(50);
   const [type, setType] = useState("Consulta");
   const [saving, setSaving] = useState(false);
@@ -44,7 +45,8 @@ export function AddAppointmentDialog({
     setProfessionalId("");
     const d = defaultDate ? new Date(defaultDate) : new Date();
     d.setHours(9, 0, 0, 0);
-    setScheduledAt(d.toISOString().slice(0, 16));
+    setDateStr(d.toISOString().slice(0, 10));
+    setTimeStr(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
     setDuration(50);
     setType("Consulta");
     setError(null);
@@ -61,7 +63,7 @@ export function AddAppointmentDialog({
       setError("Selecione o paciente.");
       return;
     }
-    if (!scheduledAt) {
+    if (!dateStr || !timeStr) {
       setError("Data e hora são obrigatórios.");
       return;
     }
@@ -71,7 +73,7 @@ export function AddAppointmentDialog({
       const ok = await onSave({
         patient_id: patientId,
         professional_id: professionalId && professionalId !== "_empty" ? professionalId : undefined,
-        scheduled_at: new Date(scheduledAt).toISOString(),
+        scheduled_at: new Date(`${dateStr}T${timeStr}`).toISOString(),
         duration_minutes: duration,
         type,
         status: "pending",
@@ -122,17 +124,31 @@ export function AddAppointmentDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="appointment-datetime">Data e hora *</Label>
-            <Input
-              id="appointment-datetime"
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-              className="rounded-xl"
-              aria-required="true"
-              aria-label="Data e hora do agendamento"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="appointment-date">Data *</Label>
+              <Input
+                id="appointment-date"
+                type="date"
+                value={dateStr}
+                onChange={(e) => setDateStr(e.target.value)}
+                className="rounded-xl"
+                aria-required="true"
+                aria-label="Data do agendamento"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="appointment-time">Hora *</Label>
+              <Input
+                id="appointment-time"
+                type="time"
+                value={timeStr}
+                onChange={(e) => setTimeStr(e.target.value)}
+                className="rounded-xl"
+                aria-required="true"
+                aria-label="Hora do agendamento (ex: 14:30)"
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

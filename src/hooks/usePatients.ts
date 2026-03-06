@@ -90,7 +90,13 @@ export function usePatients(): UsePatientsState {
   }, []);
 
   useEffect(() => {
-    if (clinicId) fetchPatients();
+    if (clinicId) {
+      fetchPatients();
+    } else {
+      setLoading(false);
+      setError(null);
+      setPatients([]);
+    }
   }, [clinicId, fetchPatients]);
 
   useEffect(() => {

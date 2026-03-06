@@ -122,6 +122,15 @@
     line-height: 1.6;
   }
 
+  /* Evita preto puro em alto contraste do sistema - melhora visibilidade */
+  @media (prefers-contrast: more) {
+    .dark {
+      --background: 0 0% 8%;
+      --card: 0 0% 10%;
+      --muted: 0 0% 12%;
+    }
+  }
+
   .dark {
     --background: 0 0% 6%;
     --foreground: 0 0% 93%;

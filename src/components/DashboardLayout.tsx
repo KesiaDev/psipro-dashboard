@@ -29,7 +29,7 @@ export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayo
       </a>
       <div className="flex min-h-screen w-full bg-background" role="application" aria-label="PsiPro Dashboard">
         <AppSidebar />
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col min-w-0 bg-background">
           <header className="flex h-16 items-center justify-between border-b border-border bg-card/50 backdrop-blur-sm px-6" role="banner">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" aria-label="Abrir menu lateral" />
@@ -45,7 +45,7 @@ export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayo
               <NotificationsDropdown />
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-6" role="main" id="main-content">
+          <main className="flex-1 overflow-auto p-6 bg-background" role="main" id="main-content">
             {isClinicReady ? children : <LoadingSkeleton variant="page" />}
           </main>
         </div>

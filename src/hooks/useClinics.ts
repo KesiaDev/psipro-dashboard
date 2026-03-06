@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export interface Clinic {
@@ -34,6 +35,7 @@ export interface UseClinicsState {
 }
 
 export function useClinics(): UseClinicsState {
+  const { session } = useAuth();
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
@@ -68,8 +70,14 @@ export function useClinics(): UseClinicsState {
   }, []);
 
   useEffect(() => {
-    fetchClinics();
-  }, [fetchClinics]);
+    if (session?.access_token) {
+      fetchClinics();
+    } else {
+      setLoading(false);
+      setError(null);
+      setClinics([]);
+    }
+  }, [session?.access_token, fetchClinics]);
 
   const createClinic = useCallback(async (input: CreateClinicInput): Promise<Clinic | null> => {
     try {

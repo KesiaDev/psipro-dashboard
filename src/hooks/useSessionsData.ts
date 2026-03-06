@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
 import { toast } from "sonner";
+import { useClinic } from "@/contexts/ClinicContext";
 
 export interface SessionItem {
   id: string | number;
@@ -17,6 +18,7 @@ export interface SessionItem {
 export interface CreateSessionInput {
   patient_id: string;
   professional_id?: string;
+  clinic_id?: string;
   scheduled_at: string;
   duration_minutes?: number;
   type?: string;
@@ -66,6 +68,7 @@ function formatTime(dateStr: string | null): string {
 }
 
 export function useSessionsData(): UseSessionsDataState {
+  const { clinicId } = useClinic();
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
@@ -105,20 +108,28 @@ export function useSessionsData(): UseSessionsDataState {
   }, []);
 
   useEffect(() => {
-    fetchSessions();
-  }, [fetchSessions]);
+    if (clinicId) fetchSessions();
+  }, [clinicId, fetchSessions]);
 
-  const createSession = useCallback(async (input: CreateSessionInput): Promise<boolean> => {
-    try {
-      await api.post("/sessions", input);
-      toast.success("Sessão criada com sucesso");
-      await fetchSessions();
-      return true;
-    } catch {
-      toast.error("Erro ao criar sessão");
-      return false;
-    }
-  }, [fetchSessions]);
+  const createSession = useCallback(
+    async (input: CreateSessionInput): Promise<boolean> => {
+      try {
+        const payload = {
+          ...input,
+          clinic_id: input.clinic_id ?? clinicId ?? undefined,
+        };
+        await api.post("/sessions", payload);
+        toast.success("Sessão criada com sucesso");
+        await fetchSessions();
+        return true;
+      } catch (err) {
+        const apiErr = err as ApiError;
+        toast.error(apiErr?.message ?? "Erro ao criar sessão");
+        return false;
+      }
+    },
+    [clinicId, fetchSessions]
+  );
 
   return { sessions, loading, error, refetch: fetchSessions, createSession };
 }

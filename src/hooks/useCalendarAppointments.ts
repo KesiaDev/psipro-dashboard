@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
 import { toast } from "sonner";
+import { useClinic } from "@/contexts/ClinicContext";
 
 export interface CalendarAppointment {
   id: string | number;
@@ -17,6 +18,7 @@ export interface CalendarAppointment {
 export interface CreateAppointmentInput {
   patient_id: string;
   professional_id?: string;
+  clinic_id?: string;
   scheduled_at: string;
   duration_minutes?: number;
   type?: string;
@@ -41,14 +43,22 @@ function getInitials(name: string): string {
 }
 
 export function useCalendarAppointments(): UseCalendarAppointmentsState {
+  const { clinicId } = useClinic();
   const [appointments, setAppointments] = useState<CalendarAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
 
-  const fetchAppointments = useCallback(async (startDate?: string, endDate?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
+  const fetchAppointments = useCallback(
+    async (startDate?: string, endDate?: string) => {
+      if (!clinicId) {
+        setLoading(false);
+        setAppointments([]);
+        setError(null);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
       const start = startDate ?? new Date().toISOString().slice(0, 10);
       const end = endDate ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
       const res = await api.get<{ appointments?: Record<string, unknown>[]; data?: Record<string, unknown>[] }>(
@@ -87,18 +97,36 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [clinicId]);
 
-  const createAppointment = useCallback(async (input: CreateAppointmentInput): Promise<boolean> => {
-    try {
-      await api.post("/appointments", input);
-      toast.success("Agendamento criado com sucesso");
-      return true;
-    } catch {
-      toast.error("Erro ao criar agendamento");
-      return false;
-    }
-  }, []);
+  const createAppointment = useCallback(
+    async (input: CreateAppointmentInput): Promise<boolean> => {
+      if (!clinicId) {
+        toast.error("Selecione uma clínica para criar agendamentos.");
+        return false;
+      }
+      try {
+        const payload: Record<string, unknown> = {
+          patient_id: input.patient_id,
+          scheduled_at: input.scheduled_at,
+          clinic_id: clinicId,
+        };
+        if (input.professional_id != null) payload.professional_id = input.professional_id;
+        if (input.duration_minutes != null) payload.duration_minutes = input.duration_minutes;
+        if (input.type != null) payload.type = input.type;
+        if (input.status != null) payload.status = input.status;
+        await api.post("/appointments", payload);
+        toast.success("Agendamento criado com sucesso");
+        await fetchAppointments();
+        return true;
+      } catch (err) {
+        const apiErr = err as ApiError;
+        toast.error(apiErr?.message ?? "Erro ao criar agendamento");
+        return false;
+      }
+    },
+    [clinicId, fetchAppointments]
+  );
 
   return { appointments, loading, error, refetch: fetchAppointments, createAppointment };
 }

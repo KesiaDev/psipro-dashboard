@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import { NotificationsDropdown } from "@/components/NotificationsDropdown";
 import { Button } from "@/components/ui/button";
 import { ClinicSelector } from "@/components/ClinicSelector";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -33,10 +34,7 @@ export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayo
               <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground">
                 <Search className="h-[18px] w-[18px]" />
               </Button>
-              <Button variant="ghost" size="icon" className="relative rounded-xl text-muted-foreground hover:text-foreground">
-                <Bell className="h-[18px] w-[18px]" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary" />
-              </Button>
+              <NotificationsDropdown />
             </div>
           </header>
           <main className="flex-1 overflow-auto p-6">

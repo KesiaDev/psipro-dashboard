@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Search, Plus, Phone, Mail, MoreHorizontal, FileSpreadsheet, User, Pencil, Calendar, Trash2, RefreshCw } from "lucide-react";
 import { usePatients } from "@/hooks/usePatients";
+import { VOICE_EVENT_FOCUS_PATIENT_SEARCH } from "@/components/VoiceCommandButton";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";

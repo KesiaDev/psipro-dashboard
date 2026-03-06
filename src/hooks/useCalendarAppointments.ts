@@ -59,45 +59,89 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
       setLoading(true);
       setError(null);
       try {
-      const start = startDate ?? new Date().toISOString().slice(0, 10);
-      const end = endDate ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const res = await api.get<{ appointments?: Record<string, unknown>[]; data?: Record<string, unknown>[] }>(
-        `/appointments?start=${start}&end=${end}`
-      );
-      const raw = res.appointments ?? res.data ?? (Array.isArray(res) ? res : []);
+        const start = startDate ?? new Date().toISOString().slice(0, 10);
+        const end = endDate ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const weekStart = new Date(start);
+        weekStart.setHours(0, 0, 0, 0);
+        const day0 = weekStart.getTime();
+        const endDateObj = new Date(end);
+        endDateObj.setHours(23, 59, 59, 999);
 
-      const weekStart = new Date(start);
-      weekStart.setHours(0, 0, 0, 0);
-      const day0 = weekStart.getTime();
-
-      const mapped: CalendarAppointment[] = raw.map((a: Record<string, unknown>) => {
-        const dateStr = a.date ?? a.scheduled_at ?? a.start_at;
-        const d = dateStr ? new Date(dateStr as string) : new Date();
-        const dayDiff = Math.floor((d.getTime() - day0) / (24 * 60 * 60 * 1000));
-        const day = Math.max(0, Math.min(4, Math.floor(dayDiff / 1)));
-        const startHour = d.getHours() + d.getMinutes() / 60;
-        const duration = Number(a.duration ?? a.duration_minutes ?? 60) / 60;
-        const patientName = (a.patient_name as string) ?? (a.patient as { name?: string })?.name ?? "—";
-        return {
-          id: a.id ?? "",
-          patient: patientName,
-          initials: getInitials(patientName),
-          type: (a.type as string) ?? (a.session_type as string) ?? "",
-          day,
-          startHour,
-          duration,
-          status: ((a.status as string) ?? "pending") as "confirmed" | "pending" | "completed",
-          date: dateStr as string,
+        const toCalendarAppointment = (
+          a: Record<string, unknown>,
+          prefix = "apt"
+        ): CalendarAppointment => {
+          const dateStr = a.date ?? a.scheduled_at ?? a.start_at;
+          const d = dateStr ? new Date(dateStr as string) : new Date();
+          const dayDiff = Math.floor((d.getTime() - day0) / (24 * 60 * 60 * 1000));
+          const day = Math.max(0, Math.min(4, Math.floor(dayDiff / 1)));
+          const startHour = d.getHours() + d.getMinutes() / 60;
+          const duration = Number(a.duration ?? a.duration_minutes ?? 60) / 60;
+          const patientName = (a.patient_name as string) ?? (a.patient as { name?: string })?.name ?? "—";
+          const rawStatus = (a.status as string) ?? "pending";
+          const status: "confirmed" | "pending" | "completed" =
+            rawStatus === "realizada" || rawStatus === "completed" ? "completed"
+            : rawStatus === "cancelada" || rawStatus === "cancelled" ? "pending"
+            : rawStatus === "agendada" || rawStatus === "scheduled" || rawStatus === "em andamento" || rawStatus === "in-progress" ? "confirmed"
+            : rawStatus === "confirmed" ? "confirmed"
+            : "pending";
+          return {
+            id: `${prefix}-${a.id ?? ""}`,
+            patient: patientName,
+            initials: getInitials(patientName),
+            type: (a.type as string) ?? (a.session_type as string) ?? "",
+            day,
+            startHour,
+            duration,
+            status,
+            date: dateStr as string,
+          };
         };
-      });
-      setAppointments(mapped);
-    } catch (err) {
-      setError(err as ApiError);
-      setAppointments([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [clinicId]);
+
+        const [appointmentsRes, sessionsRes] = await Promise.all([
+          api.get<{ appointments?: Record<string, unknown>[]; data?: Record<string, unknown>[] }>(
+            `/appointments?start=${start}&end=${end}`
+          ),
+          api.get<{ sessions?: Record<string, unknown>[]; data?: Record<string, unknown>[] }>(
+            "/sessions"
+          ).catch(() => ({ sessions: [], data: [] })),
+        ]);
+
+        const aptRaw = appointmentsRes.appointments ?? appointmentsRes.data ?? (Array.isArray(appointmentsRes) ? appointmentsRes : []);
+        const sessRaw = sessionsRes.sessions ?? sessionsRes.data ?? (Array.isArray(sessionsRes) ? sessionsRes : []);
+
+        const sessInRange = (sessRaw as Record<string, unknown>[]).filter((s) => {
+          const dateStr = s.start_at ?? s.scheduled_at ?? s.date;
+          if (!dateStr) return false;
+          const d = new Date(dateStr as string);
+          return d >= weekStart && d <= endDateObj;
+        });
+
+        const aptMapped = (aptRaw as Record<string, unknown>[]).map((a) => toCalendarAppointment(a));
+        const dedupKey = (p: string, d: string | undefined) =>
+          `${(p ?? "").trim().toLowerCase()}|${d ? new Date(d).toISOString().slice(0, 16) : ""}`;
+        const aptKeys = new Set(aptMapped.map((a) => dedupKey(a.patient, a.date)));
+
+        const sessMapped = sessInRange
+          .map((s) => toCalendarAppointment(s, "sess"))
+          .filter((s) => !aptKeys.has(dedupKey(s.patient, s.date)));
+
+        const mapped: CalendarAppointment[] = [...aptMapped, ...sessMapped].sort((a, b) => {
+          const dA = a.date ? new Date(a.date).getTime() : 0;
+          const dB = b.date ? new Date(b.date).getTime() : 0;
+          return dA - dB;
+        });
+
+        setAppointments(mapped);
+      } catch (err) {
+        setError(err as ApiError);
+        setAppointments([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [clinicId]
+  );
 
   const createAppointment = useCallback(
     async (input: CreateAppointmentInput): Promise<boolean> => {

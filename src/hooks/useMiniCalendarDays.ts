@@ -13,26 +13,40 @@ export function useMiniCalendarDays(): UseMiniCalendarDaysState {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
 
+  const addDaysFromItems = (
+    items: { date?: string; scheduled_at?: string; start_at?: string }[],
+    year: number,
+    month: number,
+    daysSet: Set<number>
+  ) => {
+    for (const a of items) {
+      const dateStr = a.date ?? a.scheduled_at ?? a.start_at;
+      if (dateStr) {
+        const d = new Date(dateStr);
+        if (d.getFullYear() === year && d.getMonth() === month) {
+          daysSet.add(d.getDate());
+        }
+      }
+    }
+  };
+
   const fetchDays = useCallback(async (year: number, month: number) => {
     setLoading(true);
     setError(null);
     try {
       const start = new Date(year, month, 1).toISOString().slice(0, 10);
       const end = new Date(year, month + 1, 0).toISOString().slice(0, 10);
-      const res = await api.get<{ appointments?: { date?: string; scheduled_at?: string; start_at?: string }[]; data?: { date?: string; scheduled_at?: string; start_at?: string }[] }>(
-        `/appointments?start=${start}&end=${end}`
-      );
-      const raw = res.appointments ?? res.data ?? (Array.isArray(res) ? res : []);
+      const [appointmentsRes, sessionsRes] = await Promise.all([
+        api.get<{ appointments?: { date?: string; scheduled_at?: string; start_at?: string }[]; data?: { date?: string; scheduled_at?: string; start_at?: string }[] }>(
+          `/appointments?start=${start}&end=${end}`
+        ),
+        api.get<{ sessions?: { date?: string; scheduled_at?: string; start_at?: string }[]; data?: { date?: string; scheduled_at?: string; start_at?: string }[] }>("/sessions").catch(() => ({ sessions: [], data: [] })),
+      ]);
+      const aptRaw = appointmentsRes.appointments ?? appointmentsRes.data ?? (Array.isArray(appointmentsRes) ? appointmentsRes : []);
+      const sessRaw = sessionsRes.sessions ?? sessionsRes.data ?? (Array.isArray(sessionsRes) ? sessionsRes : []);
       const daysSet = new Set<number>();
-      for (const a of raw) {
-        const dateStr = (a as { date?: string; scheduled_at?: string; start_at?: string }).date ?? (a as { date?: string; scheduled_at?: string; start_at?: string }).scheduled_at ?? (a as { date?: string; scheduled_at?: string; start_at?: string }).start_at;
-        if (dateStr) {
-          const d = new Date(dateStr);
-          if (d.getFullYear() === year && d.getMonth() === month) {
-            daysSet.add(d.getDate());
-          }
-        }
-      }
+      addDaysFromItems(aptRaw as { date?: string; scheduled_at?: string; start_at?: string }[], year, month, daysSet);
+      addDaysFromItems(sessRaw as { date?: string; scheduled_at?: string; start_at?: string }[], year, month, daysSet);
       setDaysWithAppointments(Array.from(daysSet));
     } catch (err) {
       setError(err as ApiError);

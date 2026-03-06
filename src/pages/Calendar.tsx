@@ -207,12 +207,18 @@ const Calendar = () => {
                           key={dayIndex}
                           className={`relative border-l border-border/50 min-h-[60px] p-0.5 ${dayIndex === todayIndex ? "bg-primary/[0.02]" : ""}`}
                         >
-                          {dayEvents.map((event) => (
+                          {dayEvents.map((event, idx) => {
+                            const slotH = 60;
+                            const n = dayEvents.length;
+                            const h = Math.max(24, (slotH / n) - 2);
+                            const top = idx * (slotH / n);
+                            return (
                             <div
                               key={event.id}
-                              className={`absolute inset-x-0.5 rounded-lg border-l-[3px] p-2 cursor-pointer hover:shadow-md transition-shadow ${statusColors[event.status] ?? statusColors.pending}`}
+                              className={`absolute left-0.5 right-0.5 rounded-lg border-l-[3px] p-1.5 cursor-pointer hover:shadow-md transition-shadow ${statusColors[event.status] ?? statusColors.pending}`}
                               style={{
-                                height: `${event.duration * 60 - 4}px`,
+                                height: `${h}px`,
+                                top: `${top}px`,
                               }}
                             >
                               <p className="text-xs font-semibold text-foreground truncate">
@@ -223,7 +229,8 @@ const Calendar = () => {
                                 {event.type}
                               </p>
                             </div>
-                          ))}
+                          );
+                          })}
                         </div>
                       );
                     })}

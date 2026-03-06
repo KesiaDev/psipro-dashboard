@@ -16,7 +16,9 @@ import {
   ListTodo,
   AlertTriangle,
   User,
+  Volume2,
 } from "lucide-react";
+import { speakText, isSpeechSupported } from "@/lib/speech";
 
 const SessionDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -56,6 +58,24 @@ const SessionDetail = () => {
   const ai = session.aiAnalysis;
   const hasAIAnalysis = ai && (ai.summary || (ai.themes?.length ?? 0) > 0 || (ai.emotions?.length ?? 0) > 0);
 
+  const getTextToSpeak = (): string => {
+    if (!ai) return "";
+    const parts: string[] = [];
+    if (ai.summary) {
+      parts.push(`Resumo da sessão. ${ai.summary}`);
+    }
+    if (ai.themes?.length) {
+      parts.push(`Temas principais: ${ai.themes.join(". ")}`);
+    }
+    if (ai.emotions?.length) {
+      parts.push(`Emoções predominantes: ${ai.emotions.join(", ")}`);
+    }
+    return parts.join(" ") || "";
+  };
+
+  const textToSpeak = getTextToSpeak();
+  const canSpeak = hasAIAnalysis && textToSpeak && isSpeechSupported();
+
   return (
     <DashboardLayout title={`Sessão · ${session.patient}`}>
       <div className="space-y-6">
@@ -67,8 +87,9 @@ const SessionDetail = () => {
               size="icon"
               className="rounded-xl shrink-0"
               onClick={() => navigate("/sessions")}
+              aria-label="Voltar para lista de sessões"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
             </Button>
             <div>
               <h1 className="font-heading text-2xl font-bold text-foreground">
@@ -101,11 +122,25 @@ const SessionDetail = () => {
         </div>
 
         {/* Análise da IA */}
-        <div className="space-y-4">
-          <h2 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Análise da IA
-          </h2>
+        <section className="space-y-4" aria-labelledby="ai-analysis-heading">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 id="ai-analysis-heading" className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
+              Análise da IA
+            </h2>
+            {canSpeak && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl gap-2 shrink-0"
+                onClick={() => speakText(textToSpeak)}
+                aria-label="Ouvir resumo da sessão em voz alta"
+              >
+                <Volume2 className="h-4 w-4" aria-hidden="true" />
+                Ouvir resumo da sessão
+              </Button>
+            )}
+          </div>
 
           {!hasAIAnalysis ? (
             <div className="card-soft p-8 text-center">
@@ -114,7 +149,7 @@ const SessionDetail = () => {
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2" aria-live="polite" aria-label="Análise da sessão gerada pela inteligência artificial">
               {/* Resumo clínico */}
               {ai?.summary && (
                 <Card className="card-soft border-border overflow-hidden">
@@ -222,7 +257,7 @@ const SessionDetail = () => {
               )}
             </div>
           )}
-        </div>
+        </section>
       </div>
     </DashboardLayout>
   );

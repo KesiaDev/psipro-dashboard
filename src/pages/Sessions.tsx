@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useClinic } from "@/contexts/ClinicContext";
@@ -13,6 +13,7 @@ import { CreateSessionDialog } from "@/components/sessions/CreateSessionDialog";
 import { useSessionsData } from "@/hooks/useSessionsData";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { VOICE_EVENT_OPEN_NEW_SESSION } from "@/components/VoiceCommandButton";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   completed: { label: "Concluída", className: "bg-accent text-accent-foreground" },
@@ -30,6 +31,12 @@ const Sessions = () => {
   const [filter, setFilter] = useState<string>("all");
   const [showSessionDialog, setShowSessionDialog] = useState(false);
   const { sessions, loading, error, refetch, createSession } = useSessionsData();
+
+  useEffect(() => {
+    const handler = () => setShowSessionDialog(true);
+    window.addEventListener(VOICE_EVENT_OPEN_NEW_SESSION, handler);
+    return () => window.removeEventListener(VOICE_EVENT_OPEN_NEW_SESSION, handler);
+  }, []);
 
   const filtered = sessions.filter((s) => {
     const matchesSearch = s.patient.toLowerCase().includes(search.toLowerCase());
@@ -77,8 +84,9 @@ const Sessions = () => {
           <Button
             className="gold-gradient text-primary-foreground rounded-xl gap-2"
             onClick={() => setShowSessionDialog(true)}
+            aria-label="Adicionar nova sessão"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4" aria-hidden="true" />
             Nova Sessão
           </Button>
         </div>
@@ -93,13 +101,16 @@ const Sessions = () => {
 
         {/* Search & Filters */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative flex-1" role="search">
+            <label htmlFor="session-search" className="sr-only">Buscar sessões por paciente</label>
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
+              id="session-search"
               placeholder="Buscar por paciente..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 rounded-xl bg-card border-border"
+              aria-label="Buscar sessões por nome do paciente"
             />
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -136,6 +147,10 @@ const Sessions = () => {
                     <div
                       key={session.id}
                       onClick={() => navigate(`/sessions/${session.id}`)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/sessions/${session.id}`); } }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Sessão de ${session.patient}, ${session.date} ${session.time}, ${statusConfig[session.status]?.label ?? session.status}. Pressione Enter para ver detalhes.`}
                       className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group"
                     >
                       <Avatar className="h-10 w-10">

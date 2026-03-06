@@ -35,8 +35,8 @@ export function AppointmentsList({ appointments, loading, error }: AppointmentsL
 
   if (error) {
     return (
-      <div className="card-soft p-6 animate-fade-in">
-        <h3 className="font-heading text-base font-semibold text-foreground mb-5">Consultas de Hoje</h3>
+      <section className="card-soft p-6 animate-fade-in" aria-labelledby="appointments-today-heading">
+        <h3 id="appointments-today-heading" className="font-heading text-base font-semibold text-foreground mb-5">Consultas de Hoje</h3>
         <div className="text-center py-8 text-destructive text-sm">
           {(error as ApiError).status === 401
             ? "Sessão expirada. Faça login novamente."
@@ -44,14 +44,14 @@ export function AppointmentsList({ appointments, loading, error }: AppointmentsL
               ? "Acesso negado."
               : (error as ApiError).message}
         </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="card-soft p-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+    <section className="card-soft p-6 animate-fade-in" style={{ animationDelay: "0.1s" }} aria-labelledby="appointments-today-heading" role="region">
       <div className="mb-5 flex items-center justify-between">
-        <h3 className="font-heading text-base font-semibold text-foreground">Consultas de Hoje</h3>
+        <h3 id="appointments-today-heading" className="font-heading text-base font-semibold text-foreground">Consultas de Hoje</h3>
         <span className="text-xs font-medium text-muted-foreground">{today}</span>
       </div>
       {loading ? (
@@ -97,6 +97,6 @@ export function AppointmentsList({ appointments, loading, error }: AppointmentsL
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

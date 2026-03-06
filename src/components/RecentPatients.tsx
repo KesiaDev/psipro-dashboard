@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RecentPatient } from "@/hooks/useRecentPatients";
@@ -16,6 +17,8 @@ const progressStyles: Record<string, { label: string; dot: string }> = {
 };
 
 export function RecentPatients({ patients, loading, error }: RecentPatientsProps) {
+  const navigate = useNavigate();
+
   if (error) {
     return (
       <div className="card-soft p-6 animate-fade-in">
@@ -32,8 +35,8 @@ export function RecentPatients({ patients, loading, error }: RecentPatientsProps
   }
 
   return (
-    <div className="card-soft p-6 animate-fade-in" style={{ animationDelay: "0.15s" }}>
-      <h3 className="font-heading text-base font-semibold text-foreground mb-5">Pacientes Recentes</h3>
+    <section className="card-soft p-6 animate-fade-in" style={{ animationDelay: "0.15s" }} aria-labelledby="recent-patients-heading">
+      <h3 id="recent-patients-heading" className="font-heading text-base font-semibold text-foreground mb-5">Pacientes Recentes</h3>
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3, 4].map((i) => (
@@ -51,9 +54,20 @@ export function RecentPatients({ patients, loading, error }: RecentPatientsProps
           Nenhum paciente recente.
         </div>
       ) : (
-        <div className="space-y-4">
+        <ul className="space-y-4" role="list">
           {patients.map((p) => (
-            <div key={p.name + p.lastSession} className="flex items-center gap-3">
+            <li
+              key={p.id ?? p.name + p.lastSession}
+              className="flex items-center gap-3"
+              {...(p.id && {
+                tabIndex: 0,
+                role: "button",
+                onClick: () => navigate(`/patients/${p.id}`),
+                onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/patients/${p.id}`); } },
+                "aria-label": `Paciente ${p.name}, ${p.sessions} sessões. Pressione Enter para ver detalhes.`,
+                className: "flex items-center gap-3 cursor-pointer rounded-lg hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card -m-1 p-1",
+              })}
+            >
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-semibold">
                   {p.initials}
@@ -67,10 +81,10 @@ export function RecentPatients({ patients, loading, error }: RecentPatientsProps
                 <span className={`h-2 w-2 rounded-full ${progressStyles[p.progress]?.dot ?? progressStyles.stable.dot}`} />
                 <span className="text-xs text-muted-foreground">{progressStyles[p.progress]?.label ?? "Estável"}</span>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
-    </div>
+    </section>
   );
 }

@@ -67,41 +67,49 @@ export function AddPatientDialog({ open, onOpenChange, onSave }: Props) {
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">Nome completo *</Label>
+            <Label htmlFor="patient-name" className="text-sm text-muted-foreground">Nome completo *</Label>
             <Input
+              id="patient-name"
               value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
               placeholder="Ex: Ana Souza"
               className="rounded-xl"
+              aria-required="true"
+              aria-label="Nome completo do paciente"
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">E-mail</Label>
+            <Label htmlFor="patient-email" className="text-sm text-muted-foreground">E-mail</Label>
             <Input
+              id="patient-email"
               type="email"
               value={form.email ?? ""}
               onChange={(e) => setForm({ ...form, email: e.target.value || null })}
               placeholder="email@exemplo.com"
               className="rounded-xl"
+              aria-label="E-mail do paciente"
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">Telefone</Label>
+            <Label htmlFor="patient-phone" className="text-sm text-muted-foreground">Telefone</Label>
             <Input
+              id="patient-phone"
               value={form.phone ?? ""}
               onChange={(e) => setForm({ ...form, phone: e.target.value || null })}
               placeholder="(11) 99999-9999"
               className="rounded-xl"
+              aria-label="Telefone do paciente"
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">Status</Label>
+            <Label htmlFor="patient-status" className="text-sm text-muted-foreground">Status</Label>
             <Select
               value={form.status}
               onValueChange={(v) => setForm({ ...form, status: v as CreatePatientInput["status"] })}
+              aria-label="Status do paciente"
             >
-              <SelectTrigger className="rounded-xl">
-                <SelectValue />
+              <SelectTrigger id="patient-status" className="rounded-xl" aria-label="Selecionar status">
+                <SelectValue placeholder="Selecione o status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="active">Ativo</SelectItem>

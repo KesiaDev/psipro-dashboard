@@ -3,6 +3,7 @@ import { api, ApiError } from "@/services/api";
 import { useClinic } from "@/contexts/ClinicContext";
 
 export interface RecentPatient {
+  id?: string;
   name: string;
   initials: string;
   lastSession: string;
@@ -49,6 +50,7 @@ export function useRecentPatients(): UseRecentPatientsState {
       const res = await api.get<{ patients?: Record<string, unknown>[]; data?: Record<string, unknown>[] }>("/patients/recent");
       const raw = res.patients ?? res.data ?? (Array.isArray(res) ? res : []);
       const mapped: RecentPatient[] = raw.slice(0, 5).map((p: Record<string, unknown>) => ({
+        id: (p.id as string) ?? undefined,
         name: (p.full_name as string) ?? (p.name as string) ?? "—",
         initials: getInitials(((p.full_name as string) ?? p.name as string) ?? ""),
         lastSession: formatShortDate((p.last_session_at as string) ?? (p.lastSession as string) ?? null),

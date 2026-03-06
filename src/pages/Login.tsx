@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,13 +9,37 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
+  const [searchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [handoffLoading, setHandoffLoading] = useState(false);
+  const { signIn, signInWithHandoff } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const tokenFromApp = searchParams.get("token");
+  const returnUrl = searchParams.get("returnUrl") || "/";
+
+  useEffect(() => {
+    if (!tokenFromApp) return;
+    let cancelled = false;
+    const runHandoff = async () => {
+      setHandoffLoading(true);
+      const { error } = await signInWithHandoff(tokenFromApp);
+      setHandoffLoading(false);
+      if (cancelled) return;
+      if (error) {
+        toast({ title: "Erro ao conectar", description: error.message, variant: "destructive" });
+        navigate("/login", { replace: true });
+      } else {
+        navigate(returnUrl, { replace: true });
+      }
+    };
+    runHandoff();
+    return () => { cancelled = true; };
+  }, [tokenFromApp, signInWithHandoff, navigate, returnUrl, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +52,17 @@ const Login = () => {
       navigate("/");
     }
   };
+
+  if (tokenFromApp && handoffLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin h-10 w-10 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground">Conectando ao PsiPro App...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">

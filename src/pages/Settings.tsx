@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Camera, Bell, Shield, Clock, Smartphone } from "lucide-react";
+import { Save, Camera, Bell, Shield, Clock, Smartphone, Accessibility } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 
@@ -24,6 +25,7 @@ function getInitials(name: string): string {
 
 const Settings = () => {
   const { profile, loading, error, refetch, updateProfile, updatePassword } = useProfile();
+  const { highContrast, enlargedFont, textSpacing, largeButtons, setHighContrast, setEnlargedFont, setTextSpacing, setLargeButtons } = useAccessibility();
   const [profileForm, setProfileForm] = useState({ name: "", crp: "", email: "", phone: "", specialties: "" });
   const [profileSaving, setProfileSaving] = useState(false);
   const [notifications, setNotifications] = useState({
@@ -118,6 +120,9 @@ const Settings = () => {
             <TabsTrigger value="integrations" className="rounded-lg data-[state=active]:bg-accent data-[state=active]:text-accent-foreground px-4 py-2 text-sm">
               Integrações
             </TabsTrigger>
+            <TabsTrigger value="accessibility" className="rounded-lg data-[state=active]:bg-accent data-[state=active]:text-accent-foreground px-4 py-2 text-sm">
+              Acessibilidade
+            </TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
@@ -145,45 +150,55 @@ const Settings = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Nome completo</Label>
+                  <Label htmlFor="profile-name" className="text-sm text-muted-foreground">Nome completo</Label>
                   <Input
+                    id="profile-name"
                     value={profileForm.name}
                     onChange={(e) => setProfileForm((p) => ({ ...p, name: e.target.value }))}
                     className="input-premium"
+                    aria-label="Nome completo"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">CRP</Label>
+                  <Label htmlFor="profile-crp" className="text-sm text-muted-foreground">CRP</Label>
                   <Input
+                    id="profile-crp"
                     value={profileForm.crp}
                     onChange={(e) => setProfileForm((p) => ({ ...p, crp: e.target.value }))}
                     className="input-premium"
+                    aria-label="Registro CRP"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">E-mail</Label>
+                  <Label htmlFor="profile-email" className="text-sm text-muted-foreground">E-mail</Label>
                   <Input
+                    id="profile-email"
                     type="email"
                     value={profileForm.email}
                     onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))}
                     className="input-premium"
+                    aria-label="E-mail"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Telefone</Label>
+                  <Label htmlFor="profile-phone" className="text-sm text-muted-foreground">Telefone</Label>
                   <Input
+                    id="profile-phone"
                     value={profileForm.phone}
                     onChange={(e) => setProfileForm((p) => ({ ...p, phone: e.target.value }))}
                     className="input-premium"
+                    aria-label="Telefone"
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label className="text-sm text-muted-foreground">Especialidades</Label>
+                  <Label htmlFor="profile-specialties" className="text-sm text-muted-foreground">Especialidades</Label>
                   <Input
+                    id="profile-specialties"
                     value={profileForm.specialties}
                     onChange={(e) => setProfileForm((p) => ({ ...p, specialties: e.target.value }))}
                     placeholder="TCC, Terapia de Casal..."
                     className="input-premium"
+                    aria-label="Especialidades"
                   />
                 </div>
               </div>
@@ -263,17 +278,41 @@ const Settings = () => {
               </div>
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Senha atual</Label>
-                  <Input type="password" placeholder="••••••••" className="input-premium" />
+                  <Label htmlFor="current-password" className="text-sm text-muted-foreground">Senha atual</Label>
+                  <Input
+                    id="current-password"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="input-premium"
+                    aria-label="Senha atual"
+                  />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <Label className="text-sm text-muted-foreground">Nova senha</Label>
-                    <Input type="password" placeholder="••••••••" className="input-premium" />
+                    <Label htmlFor="new-password" className="text-sm text-muted-foreground">Nova senha</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="input-premium"
+                      aria-label="Nova senha"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm text-muted-foreground">Confirmar nova senha</Label>
-                    <Input type="password" placeholder="••••••••" className="input-premium" />
+                    <Label htmlFor="confirm-password" className="text-sm text-muted-foreground">Confirmar nova senha</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="input-premium"
+                      aria-label="Confirmar nova senha"
+                    />
                   </div>
                 </div>
               </div>
@@ -286,9 +325,52 @@ const Settings = () => {
                 <Button variant="outline-gold" className="rounded-xl" size="sm">Ativar</Button>
               </div>
               <div className="flex justify-end mt-6">
-                <Button variant="gold" className="rounded-xl gap-2">
-                  <Save className="h-4 w-4" /> Atualizar Senha
+                <Button variant="gold" className="rounded-xl gap-2" onClick={handleUpdatePassword} disabled={passwordSaving}>
+                  <Save className="h-4 w-4" /> {passwordSaving ? "Atualizando..." : "Atualizar Senha"}
                 </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Accessibility Tab */}
+          <TabsContent value="accessibility" className="space-y-6">
+            <div className="card-soft p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <Accessibility className="h-5 w-5 text-primary" />
+                <h3 className="font-heading text-base font-semibold text-foreground">Acessibilidade</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-6">
+                Modo de baixa visão e acessibilidade. Ajuste as opções para leitores de tela (NVDA, VoiceOver, JAWS) e leitura visual.
+              </p>
+              <div className="space-y-5">
+                <div className="flex items-center justify-between py-3 border-b border-border/50">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Alto contraste</p>
+                    <p className="text-xs text-muted-foreground">Aumenta o contraste de cores conforme WCAG 2.1 nível AA</p>
+                  </div>
+                  <Switch checked={highContrast} onCheckedChange={setHighContrast} aria-label="Ativar alto contraste" />
+                </div>
+                <div className="flex items-center justify-between py-3 border-b border-border/50">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Fonte ampliada</p>
+                    <p className="text-xs text-muted-foreground">Aumenta o tamanho padrão do texto</p>
+                  </div>
+                  <Switch checked={enlargedFont} onCheckedChange={setEnlargedFont} aria-label="Ativar fonte ampliada" />
+                </div>
+                <div className="flex items-center justify-between py-3 border-b border-border/50">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Espaçamento de texto</p>
+                    <p className="text-xs text-muted-foreground">Aumenta espaçamento entre letras e linhas</p>
+                  </div>
+                  <Switch checked={textSpacing} onCheckedChange={setTextSpacing} aria-label="Ativar espaçamento de texto" />
+                </div>
+                <div className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Botões maiores</p>
+                    <p className="text-xs text-muted-foreground">Aumenta o tamanho dos botões para facilitar o clique</p>
+                  </div>
+                  <Switch checked={largeButtons} onCheckedChange={setLargeButtons} aria-label="Ativar botões maiores" />
+                </div>
               </div>
             </div>
           </TabsContent>
@@ -300,10 +382,44 @@ const Settings = () => {
                 <Smartphone className="h-5 w-5 text-primary" />
                 <h3 className="font-heading text-base font-semibold text-foreground">Integrações</h3>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">Integrações com serviços externos estarão disponíveis em breve.</p>
               <div className="space-y-4">
+                {/* PsiPro App - Conectado */}
+                <div className="flex items-center justify-between py-4 border-b border-border/50">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-primary/10">
+                      <Smartphone className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">PsiPro App</p>
+                      <p className="text-xs text-muted-foreground">Conecte com o aplicativo mobile PsiPro. Web e App compartilham o mesmo backend.</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline-gold"
+                    size="sm"
+                    className="rounded-xl gap-2"
+                    onClick={() => {
+                      try {
+                        window.open("psipro://open", "_blank", "noopener");
+                      } catch {
+                        window.location.href = "psipro://open";
+                      }
+                    }}
+                    aria-label="Abrir PsiPro no aplicativo mobile"
+                  >
+                    <Smartphone className="h-4 w-4" />
+                    Abrir no app
+                  </Button>
+                </div>
+                <div className="rounded-xl bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
+                  <p className="font-medium text-foreground">Como conectar</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Abra o PsiPro App no celular e faça login com as mesmas credenciais desta conta.</li>
+                    <li>No App, use &quot;Plataforma Web&quot; ou &quot;Abrir Web&quot; — o App abrirá o dashboard automaticamente com sua sessão.</li>
+                    <li>Se não abrir, o deeplink &quot;Abrir no app&quot; acima tenta abrir o App (se instalado).</li>
+                  </ul>
+                </div>
                 {[
-                  { name: "PsiPro App", desc: "Conecte com o aplicativo mobile PsiPro" },
                   { name: "Google Calendar", desc: "Sincronize sua agenda com o Google Calendar" },
                   { name: "WhatsApp Business", desc: "Envie lembretes e mensagens automatizadas" },
                   { name: "Gateway de Pagamento", desc: "Receba pagamentos online dos pacientes" },

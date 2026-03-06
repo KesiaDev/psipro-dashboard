@@ -115,8 +115,9 @@ const PatientDetail = () => {
               size="icon"
               className="rounded-xl shrink-0"
               onClick={() => navigate("/patients")}
+              aria-label="Voltar para lista de pacientes"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
             </Button>
             <div>
               <h1 className="font-heading text-2xl font-bold text-foreground">{name}</h1>
@@ -205,6 +206,10 @@ const PatientDetail = () => {
                 <div
                   key={String(session.id)}
                   onClick={() => navigate(`/sessions/${session.id}`)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/sessions/${session.id}`); } }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Sessão de ${formatDate(session.date)} ${session.time ? formatTime(session.time) : ""}, ${session.type ?? ""}. Pressione Enter para ver detalhes.`}
                   className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer"
                 >
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -304,9 +309,27 @@ const PatientDetail = () => {
               {/* Gráfico de emoções por sessão */}
               {evolution.emotionsBySession.length > 0 && (
                 <div className="card-soft p-6">
-                  <h3 className="font-heading text-base font-semibold text-foreground mb-6">
+                  <h3 className="font-heading text-base font-semibold text-foreground mb-6" id="emotions-chart-heading">
                     Emoções por sessão
                   </h3>
+                  {/* Tabela alternativa para leitores de tela */}
+                  <table className="sr-only" aria-labelledby="emotions-chart-heading">
+                    <thead>
+                      <tr>
+                        <th>Sessão</th>
+                        <th>Quantidade de emoções</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {evolution.emotionsBySession.map((s, i) => (
+                        <tr key={i}>
+                          <td>{s.sessionDate ? new Date(s.sessionDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : String(s.sessionId)}</td>
+                          <td>{s.emotions?.length ?? 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div aria-hidden="true">
                   <ResponsiveContainer width="100%" height={220}>
                     <BarChart
                       data={evolution.emotionsBySession.map((s) => ({
@@ -354,6 +377,7 @@ const PatientDetail = () => {
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
+                  </div>
                 </div>
               )}
             </div>

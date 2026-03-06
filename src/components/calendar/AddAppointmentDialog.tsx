@@ -92,9 +92,9 @@ export function AddAppointmentDialog({
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div className="space-y-2">
-            <Label>Paciente *</Label>
+            <Label htmlFor="appointment-patient">Paciente *</Label>
             <Select value={patientId} onValueChange={setPatientId}>
-              <SelectTrigger className="rounded-xl">
+              <SelectTrigger id="appointment-patient" className="rounded-xl" aria-required="true" aria-label="Selecionar paciente">
                 <SelectValue placeholder="Selecione o paciente" />
               </SelectTrigger>
               <SelectContent>
@@ -107,9 +107,9 @@ export function AddAppointmentDialog({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Profissional</Label>
+            <Label htmlFor="appointment-professional">Profissional</Label>
             <Select value={professionalId} onValueChange={setProfessionalId}>
-              <SelectTrigger className="rounded-xl">
+              <SelectTrigger id="appointment-professional" className="rounded-xl" aria-label="Selecionar profissional (opcional)">
                 <SelectValue placeholder="Selecione (opcional)" />
               </SelectTrigger>
               <SelectContent>
@@ -123,33 +123,40 @@ export function AddAppointmentDialog({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Data e hora *</Label>
+            <Label htmlFor="appointment-datetime">Data e hora *</Label>
             <Input
+              id="appointment-datetime"
               type="datetime-local"
               value={scheduledAt}
               onChange={(e) => setScheduledAt(e.target.value)}
               className="rounded-xl"
+              aria-required="true"
+              aria-label="Data e hora do agendamento"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Duração (min)</Label>
+              <Label htmlFor="appointment-duration">Duração (min)</Label>
               <Input
+                id="appointment-duration"
                 type="number"
                 value={duration}
                 onChange={(e) => setDuration(Number(e.target.value) || 50)}
                 min={15}
                 max={180}
                 className="rounded-xl"
+                aria-label="Duração em minutos"
               />
             </div>
             <div className="space-y-2">
-              <Label>Tipo</Label>
+              <Label htmlFor="appointment-type">Tipo</Label>
               <Input
+                id="appointment-type"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
                 placeholder="Consulta, Avaliação..."
                 className="rounded-xl"
+                aria-label="Tipo de consulta"
               />
             </div>
           </div>

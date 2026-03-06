@@ -67,7 +67,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-sidebar-border bg-sidebar">
+    <Sidebar className="border-r border-sidebar-border bg-sidebar" role="navigation" aria-label="Menu principal">
       <SidebarHeader className="p-6 pb-4">
         <div className="flex items-center gap-3">
           <PsiProLogo size="sm" />
@@ -121,6 +121,10 @@ export function AppSidebar() {
         <div
           className="mt-3 flex items-center gap-3 rounded-xl bg-secondary p-3 cursor-pointer hover:bg-secondary/80 transition-colors"
           onClick={() => navigate("/settings")}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate("/settings"); } }}
+          tabIndex={0}
+          role="button"
+          aria-label={`Perfil: ${hasProfile ? displayName : "Configurar perfil"}. Pressione Enter para abrir configurações.`}
         >
           <Avatar className="h-9 w-9">
             <AvatarFallback className="gold-gradient text-primary-foreground text-sm font-semibold">
@@ -139,8 +143,9 @@ export function AppSidebar() {
             onClick={(e) => { e.stopPropagation(); handleLogout(); }}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
             title="Sair"
+            aria-label="Sair da conta"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </SidebarFooter>

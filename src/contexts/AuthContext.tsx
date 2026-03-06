@@ -16,6 +16,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, metadata: { first_name: string; last_name: string; crp: string }) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithHandoff: (token: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
@@ -83,6 +84,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const signInWithHandoff = async (handoffToken: string) => {
+    try {
+      const res = await api.post<{ token?: string; access_token?: string; accessToken?: string; user?: { id?: string; email?: string; name?: string; full_name?: string; clinicId?: string } }>("/auth/handoff", { token: handoffToken });
+      const token = res.token ?? res.access_token ?? res.accessToken ?? (res as { token?: string }).token;
+      const userData = res.user ?? (res as { user?: AuthUser }).user;
+      if (token && userData) {
+        localStorage.setItem(TOKEN_KEY, token);
+        const userToSave: AuthUser = {
+          id: String(userData.id ?? userData.email ?? ""),
+          email: userData.email,
+          full_name: userData.name ?? userData.full_name,
+          ...userData,
+        };
+        localStorage.setItem(AUTH_KEY, JSON.stringify(userToSave));
+        if (userData.clinicId) {
+          localStorage.setItem(CLINIC_ID_KEY, userData.clinicId);
+          sessionStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ clinicId: userData.clinicId, role: "owner" }));
+        }
+        setUser(userToSave);
+        setSession({ access_token: token });
+        return { error: null };
+      }
+      return { error: new Error("Resposta inválida do handoff") };
+    } catch (err) {
+      const e = err as ApiError;
+      return { error: new Error(e.message ?? "Erro ao validar token do app") };
+    }
+  };
+
   const signUp = async (
     email: string,
     password: string,
@@ -140,6 +170,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading,
         signUp,
         signIn,
+        signInWithHandoff,
         signOut,
         resetPassword,
         updatePassword,

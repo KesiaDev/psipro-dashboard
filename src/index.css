@@ -58,6 +58,68 @@
     --font-body: 'Inter', sans-serif;
   }
 
+  /* Modo baixa visão: alto contraste (compatível com dark mode) */
+  .high-contrast {
+    --background: 0 0% 0%;
+    --foreground: 48 100% 50%;
+    --card: 0 0% 0%;
+    --card-foreground: 48 100% 50%;
+    --muted: 0 0% 5%;
+    --muted-foreground: 48 100% 60%;
+    --border: 48 100% 40%;
+    --primary: 48 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --accent: 48 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 48 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 48 100% 50%;
+    --sidebar-accent: 48 80% 20%;
+    --sidebar-accent-foreground: 48 100% 70%;
+    --sidebar-border: 48 100% 40%;
+  }
+  /* Modo baixa visão: fonte ampliada */
+  .large-font {
+    font-size: 1.3rem;
+  }
+  .large-font .text-sm { font-size: 1.125rem; }
+  .large-font .text-xs { font-size: 1rem; }
+  .large-font .text-lg { font-size: 1.5rem; }
+  .large-font .text-2xl { font-size: 1.75rem; }
+  .large-font h1 { font-size: 2rem; }
+  .large-font h2 { font-size: 1.75rem; }
+  .large-font h3 { font-size: 1.5rem; }
+
+  /* Modo baixa visão: botões maiores */
+  .large-buttons button,
+  .large-buttons [role="button"] {
+    min-height: 2.75rem !important;
+    padding: 0.5rem 1.25rem !important;
+  }
+  .large-buttons button.h-10,
+  .large-buttons button.h-9,
+  .large-buttons button.h-11 {
+    height: 2.75rem !important;
+  }
+  .large-buttons button.h-10.w-10,
+  .large-buttons button[class*="w-10"][class*="h-10"] {
+    min-width: 2.75rem !important;
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    padding: 0.5rem !important;
+  }
+
+  /* Acessibilidade: espaçamento de texto */
+  .a11y-text-spacing p,
+  .a11y-text-spacing li,
+  .a11y-text-spacing span {
+    letter-spacing: 0.08em;
+    word-spacing: 0.2em;
+    line-height: 1.6;
+  }
+
   .dark {
     --background: 0 0% 6%;
     --foreground: 0 0% 93%;

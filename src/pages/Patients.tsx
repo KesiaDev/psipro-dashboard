@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -66,6 +66,7 @@ function formatDate(dateStr: string | null | undefined): string {
 
 const Patients = () => {
   const navigate = useNavigate();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -73,6 +74,12 @@ const Patients = () => {
   const { patients, loading, error, refetch, createPatient, deletePatient } = usePatients();
   const [patientToDelete, setPatientToDelete] = useState<{ id: string; name: string } | null>(null);
   const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
+
+  useEffect(() => {
+    const handler = () => searchInputRef.current?.focus();
+    window.addEventListener(VOICE_EVENT_FOCUS_PATIENT_SEARCH, handler);
+    return () => window.removeEventListener(VOICE_EVENT_FOCUS_PATIENT_SEARCH, handler);
+  }, []);
 
   const filtered = patients.filter((p) => {
     const name = (p.full_name ?? p.name ?? "").toLowerCase();
@@ -126,8 +133,9 @@ const Patients = () => {
               onClick={() => refetch()}
               disabled={loading}
               title="Atualizar lista"
+              aria-label="Atualizar lista de pacientes"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
             </Button>
             <AddPatientDialog
               open={showAddDialog}
@@ -151,8 +159,9 @@ const Patients = () => {
             <Button
               className="gold-gradient text-primary-foreground rounded-xl gap-2"
               onClick={() => setShowAddDialog(true)}
+              aria-label="Adicionar novo paciente"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4" aria-hidden="true" />
               Novo Paciente
             </Button>
           </div>
@@ -160,13 +169,17 @@ const Patients = () => {
 
         {/* Search & Filters */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative flex-1" role="search">
+            <label htmlFor="patient-search" className="sr-only">Buscar pacientes por nome ou telefone</label>
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
+              ref={searchInputRef}
+              id="patient-search"
               placeholder="Buscar paciente..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 rounded-xl bg-card border-border"
+              aria-label="Buscar pacientes por nome ou telefone"
             />
           </div>
           <div className="flex gap-2">
@@ -237,6 +250,14 @@ const Patients = () => {
                 className="card-soft p-4 flex items-center gap-4 hover:shadow-md transition-shadow animate-fade-in"
                 style={{ animationDelay: `${i * 0.05}s` }}
               >
+                <div
+                  className="flex-1 min-w-0 flex items-center gap-4 cursor-pointer"
+                  onClick={() => navigate(`/patients/${patient.id}`)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/patients/${patient.id}`); } }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Paciente ${patient.full_name ?? patient.name ?? "—"}, ${patient.age ?? "—"} anos, ${patient.sessions ?? 0} sessões. Pressione Enter para ver detalhes.`}
+                >
                 <Avatar className="h-11 w-11">
                   <AvatarFallback className="gold-gradient text-primary-foreground text-sm font-semibold">
                     {getInitials(patient.full_name ?? patient.name ?? "")}
@@ -284,6 +305,7 @@ const Patients = () => {
                         {progressConfig[patient.progress ?? "stable"]?.label ?? "Estável"}
                       </span>
                     </div>
+                    </div>
                   </div>
                 </div>
 
@@ -293,8 +315,9 @@ const Patients = () => {
                       variant="ghost"
                       size="icon"
                       className="rounded-xl text-muted-foreground hover:text-foreground shrink-0"
+                      aria-label={`Menu de opções do paciente ${patient.full_name ?? patient.name ?? "—"}`}
                     >
-                      <MoreHorizontal className="h-4 w-4" />
+                      <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="min-w-[180px]">

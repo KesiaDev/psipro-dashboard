@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,9 +23,15 @@ import { speakText, isSpeechSupported } from "@/lib/speech";
 const SessionDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { session, loading, error, refetch } = useSessionDetail(id);
+  const sessionFromList = (location.state as { sessionFromList?: { id: string | number; patient: string; date: string; time: string; duration: string; type: string; status: string } })?.sessionFromList;
 
-  if (error) {
+  const displaySession = session ?? (error && (error as { status?: number }).status === 404 && sessionFromList
+    ? { id: sessionFromList.id, patient: sessionFromList.patient, date: sessionFromList.date, time: sessionFromList.time, duration: sessionFromList.duration, type: sessionFromList.type, status: sessionFromList.status }
+    : null);
+
+  if (error && !displaySession) {
     const err = error as { status?: number; message?: string };
     const is404 = err.status === 404;
     const friendlyMessage = is404
@@ -58,7 +64,7 @@ const SessionDetail = () => {
     );
   }
 
-  if (loading || !session) {
+  if (loading && !displaySession) {
     return (
       <DashboardLayout title="Sessão">
         <LoadingSkeleton variant="list" />
@@ -66,7 +72,9 @@ const SessionDetail = () => {
     );
   }
 
-  const ai = session.aiAnalysis;
+  if (!displaySession) return null;
+
+  const ai = displaySession.aiAnalysis;
   const hasAIAnalysis = ai && (ai.summary || (ai.themes?.length ?? 0) > 0 || (ai.emotions?.length ?? 0) > 0);
 
   const getTextToSpeak = (): string => {
@@ -88,7 +96,7 @@ const SessionDetail = () => {
   const canSpeak = hasAIAnalysis && textToSpeak && isSpeechSupported();
 
   return (
-    <DashboardLayout title={`Sessão · ${session.patient}`}>
+    <DashboardLayout title={`Sessão · ${displaySession.patient}`}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -104,27 +112,27 @@ const SessionDetail = () => {
             </Button>
             <div>
               <h1 className="font-heading text-2xl font-bold text-foreground">
-                Sessão · {session.patient}
+                Sessão · {displaySession.patient}
               </h1>
               <p className="text-sm text-muted-foreground flex items-center gap-3 mt-1">
                 <span className="flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5" /> {session.date}
+                  <Calendar className="h-3.5 w-3.5" /> {displaySession.date}
                 </span>
-                {session.time && session.time !== "—" && (
+                {displaySession.time && displaySession.time !== "—" && (
                   <span className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5" /> {session.time}
-                    {session.duration && ` · ${session.duration}`}
+                    <Clock className="h-3.5 w-3.5" /> {displaySession.time}
+                    {displaySession.duration && ` · ${displaySession.duration}`}
                   </span>
                 )}
               </p>
             </div>
           </div>
-          {session.patientId && (
+          {"patientId" in displaySession && displaySession.patientId && (
             <Button
               variant="outline"
               size="sm"
               className="rounded-xl"
-              onClick={() => navigate(`/patients/${session.patientId}`)}
+              onClick={() => navigate(`/patients/${displaySession.patientId}`)}
             >
               <User className="h-4 w-4 mr-2" />
               Ver paciente

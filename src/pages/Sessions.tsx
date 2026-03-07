@@ -146,8 +146,8 @@ const Sessions = () => {
                   {dateSessions.map((session) => (
                     <div
                       key={session.id}
-                      onClick={() => navigate(`/sessions/${session.id}`)}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/sessions/${session.id}`); } }}
+                      onClick={() => navigate(`/sessions/${session.id}`, { state: { sessionFromList: session } })}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/sessions/${session.id}`, { state: { sessionFromList: session } }); } }}
                       tabIndex={0}
                       role="button"
                       aria-label={`Sessão de ${session.patient}, ${session.date} ${session.time}, ${statusConfig[session.status]?.label ?? session.status}. Pressione Enter para ver detalhes.`}

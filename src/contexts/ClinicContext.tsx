@@ -60,28 +60,49 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole>("owner");
   const [workspaceConfirmed, setWorkspaceConfirmed] = useState(false);
 
-  const setSelectedClinicId = useCallback((id: string) => {
-    setSelectedClinicIdState(id);
-    if (sessionStorage.getItem(WORKSPACE_CHOSEN_KEY)) {
-      localStorage.setItem(CLINIC_ID_KEY, id);
+  const getPersistedWorkspace = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    const stored = localStorage.getItem(WORKSPACE_CHOSEN_KEY);
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored) as { clinicId?: string; role?: UserRole };
+    } catch {
+      return null;
     }
   }, []);
 
-  const hasChosenWorkspace = !!sessionStorage.getItem(WORKSPACE_CHOSEN_KEY) || workspaceConfirmed;
+  const setSelectedClinicId = useCallback((id: string) => {
+    setSelectedClinicIdState(id);
+    const persisted = getPersistedWorkspace();
+    if (persisted) {
+      localStorage.setItem(CLINIC_ID_KEY, id);
+      localStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ ...persisted, clinicId: id }));
+    }
+  }, [getPersistedWorkspace]);
+
+  const setUserRoleWithPersist = useCallback((role: UserRole) => {
+    setUserRole(role);
+    const persisted = getPersistedWorkspace();
+    if (persisted) {
+      localStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ ...persisted, role }));
+    }
+  }, [getPersistedWorkspace]);
+
+  const hasChosenWorkspace = !!getPersistedWorkspace() || workspaceConfirmed;
   const needsWorkspaceSelection = clinics.length > 1 && !hasChosenWorkspace;
   const needsFirstClinic = clinics.length === 0 && !loading && !error;
 
   const confirmWorkspaceSelection = useCallback(() => {
     if (selectedClinicId) {
       localStorage.setItem(CLINIC_ID_KEY, selectedClinicId);
-      sessionStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ clinicId: selectedClinicId, role: userRole }));
+      localStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ clinicId: selectedClinicId, role: userRole }));
       setWorkspaceConfirmed(true);
     }
   }, [selectedClinicId, userRole]);
 
   useEffect(() => {
     if (clinics.length === 0) return;
-    const ws = sessionStorage.getItem(WORKSPACE_CHOSEN_KEY);
+    const ws = localStorage.getItem(WORKSPACE_CHOSEN_KEY);
     if (ws) {
       try {
         const { clinicId, role } = JSON.parse(ws) as { clinicId?: string; role?: UserRole };
@@ -91,13 +112,13 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
           if (role && ["owner", "admin", "psychologist"].includes(role)) setUserRole(role);
         }
       } catch {
-        sessionStorage.removeItem(WORKSPACE_CHOSEN_KEY);
+        localStorage.removeItem(WORKSPACE_CHOSEN_KEY);
       }
     } else if (!selectedClinicId) {
       setSelectedClinicIdState(clinics[0].id);
       if (clinics.length === 1) {
         localStorage.setItem(CLINIC_ID_KEY, clinics[0].id);
-        sessionStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ clinicId: clinics[0].id, role: "owner" }));
+        localStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ clinicId: clinics[0].id, role: "owner" }));
         setWorkspaceConfirmed(true);
       }
     }
@@ -123,7 +144,24 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ClinicContext.Provider
-      value={{ clinics, selectedClinic, setSelectedClinicId, userRole, setUserRole, loading, error, refetch, createClinic, updateClinic, updateClinicStatus, needsWorkspaceSelection, needsFirstClinic, confirmWorkspaceSelection, clinicId, isClinicReady }}
+      value={{
+        clinics,
+        selectedClinic,
+        setSelectedClinicId,
+        userRole,
+        setUserRole: setUserRoleWithPersist,
+        loading,
+        error,
+        refetch,
+        createClinic,
+        updateClinic,
+        updateClinicStatus,
+        needsWorkspaceSelection,
+        needsFirstClinic,
+        confirmWorkspaceSelection,
+        clinicId,
+        isClinicReady,
+      }}
     >
       {children}
     </ClinicContext.Provider>

@@ -205,8 +205,8 @@ const PatientDetail = () => {
               {sessionsList.map((session) => (
                 <div
                   key={String(session.id)}
-                  onClick={() => navigate(`/sessions/${session.id}`)}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/sessions/${session.id}`); } }}
+                  onClick={() => navigate(`/sessions/${session.id}`, { state: { sessionFromList: { id: session.id, patient: patient.full_name ?? patient.name ?? "—", date: formatDate(session.date), time: session.time ? formatTime(session.time) : "—", duration: session.duration ?? "", type: session.type ?? "", status: session.status ?? "" } } })}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/sessions/${session.id}`, { state: { sessionFromList: { id: session.id, patient: patient.full_name ?? patient.name ?? "—", date: formatDate(session.date), time: session.time ? formatTime(session.time) : "—", duration: session.duration ?? "", type: session.type ?? "", status: session.status ?? "" } } }); } }}
                   tabIndex={0}
                   role="button"
                   aria-label={`Sessão de ${formatDate(session.date)} ${session.time ? formatTime(session.time) : ""}, ${session.type ?? ""}. Pressione Enter para ver detalhes.`}

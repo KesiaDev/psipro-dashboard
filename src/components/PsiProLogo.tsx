@@ -10,7 +10,8 @@ interface PsiProLogoProps {
 export function PsiProLogo({ className = "", size = "md" }: PsiProLogoProps) {
   const { resolvedTheme } = useTheme();
   const heights = { sm: "h-12", md: "h-20", lg: "h-28" };
-  const src = resolvedTheme === "light" ? logoPsiProLight : logoPsiPro;
+  // resolvedTheme pode ser undefined no carregamento; padrão = logo light (fundo claro)
+  const src = resolvedTheme === "dark" ? logoPsiPro : logoPsiProLight;
 
   return (
     <img

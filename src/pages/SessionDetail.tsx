@@ -27,11 +27,15 @@ const SessionDetail = () => {
 
   if (error) {
     const err = error as { status?: number; message?: string };
+    const is404 = err.status === 404;
+    const friendlyMessage = is404
+      ? "Esta sessão pode ter sido removida ou não está mais disponível."
+      : (err.message ?? "Não foi possível carregar os dados.");
     return (
       <DashboardLayout title="Sessão">
         <ErrorState
           title={
-            err.status === 404
+            is404
               ? "Sessão não encontrada"
               : err.status === 401
                 ? "Sessão expirada"
@@ -39,10 +43,17 @@ const SessionDetail = () => {
                   ? "Acesso negado"
                   : "Erro ao carregar sessão"
           }
-          message={err.message ?? "Não foi possível carregar os dados."}
+          message={friendlyMessage}
           status={err.status}
-          onRetry={refetch}
+          onRetry={is404 ? undefined : refetch}
         />
+        {is404 && (
+          <div className="flex justify-center mt-4">
+            <Button variant="gold" className="rounded-xl" onClick={() => navigate("/sessions")}>
+              Voltar para sessões
+            </Button>
+          </div>
+        )}
       </DashboardLayout>
     );
   }

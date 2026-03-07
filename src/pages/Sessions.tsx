@@ -8,8 +8,25 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, FileText, Clock, Calendar } from "lucide-react";
+import { Search, Plus, FileText, Clock, Calendar, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { CreateSessionDialog } from "@/components/sessions/CreateSessionDialog";
+import { EditSessionDialog } from "@/components/sessions/EditSessionDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useSessionsData } from "@/hooks/useSessionsData";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
@@ -30,7 +47,9 @@ const Sessions = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [showSessionDialog, setShowSessionDialog] = useState(false);
-  const { sessions, loading, error, refetch, createSession } = useSessionsData();
+  const { sessions, loading, error, refetch, createSession, updateSession, deleteSession } = useSessionsData();
+  const [editingSession, setEditingSession] = useState<typeof sessions[0] | null>(null);
+  const [deletingSession, setDeletingSession] = useState<typeof sessions[0] | null>(null);
 
   useEffect(() => {
     const handler = () => setShowSessionDialog(true);
@@ -98,6 +117,40 @@ const Sessions = () => {
           professionals={professionals}
           onSave={createSession}
         />
+
+        <EditSessionDialog
+          open={!!editingSession}
+          onOpenChange={(open) => !open && setEditingSession(null)}
+          session={editingSession}
+          patients={patients}
+          professionals={professionals}
+          onSave={updateSession}
+        />
+
+        <AlertDialog open={!!deletingSession} onOpenChange={(open) => !open && setDeletingSession(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir sessão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir esta sessão? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  if (deletingSession) {
+                    const ok = await deleteSession(deletingSession.id);
+                    if (ok) setDeletingSession(null);
+                  }
+                }}
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Search & Filters */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -185,6 +238,33 @@ const Sessions = () => {
                           )}
                         </div>
                       </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 opacity-70 group-hover:opacity-100"
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Ações da sessão"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingSession(session); }}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); setDeletingSession(session); }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   ))}
                 </div>

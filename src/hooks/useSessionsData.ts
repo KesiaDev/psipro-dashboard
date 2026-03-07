@@ -6,13 +6,17 @@ import { useClinic } from "@/contexts/ClinicContext";
 export interface SessionItem {
   id: string | number;
   patient: string;
+  patient_id?: string;
   initials: string;
   date: string;
   time: string;
   duration: string;
+  duration_minutes?: number;
   type: string;
   status: "completed" | "scheduled" | "cancelled" | "in-progress";
   notes: boolean;
+  scheduled_at?: string;
+  professional_id?: string;
 }
 
 export interface CreateSessionInput {
@@ -31,6 +35,8 @@ export interface UseSessionsDataState {
   error: ApiError | null;
   refetch: () => Promise<void>;
   createSession: (input: CreateSessionInput) => Promise<boolean>;
+  updateSession: (id: string | number, input: CreateSessionInput) => Promise<boolean>;
+  deleteSession: (id: string | number) => Promise<boolean>;
 }
 
 function getInitials(name: string): string {
@@ -89,13 +95,18 @@ export function useSessionsData(): UseSessionsDataState {
         return {
           id: s.id ?? "",
           patient: patientName,
+          patient_id: s.patient_id != null ? String(s.patient_id) : (s.patient as { id?: string })?.id != null ? String((s.patient as { id: string }).id) : undefined,
           initials: getInitials(patientName),
           date: formatDate(startAt),
           time: formatTime(startAt),
           duration: durationStr,
+          duration_minutes: durationMin,
           type: (s.type as string) ?? (s.session_type as string) ?? "",
           status: ((s.status as string) ?? "scheduled") as SessionItem["status"],
           notes: Boolean(s.has_notes ?? s.notes ?? false),
+          scheduled_at: startAt as string,
+          professional_id: s.professional_id != null ? String(s.professional_id) : undefined,
+          duration_minutes: durationMin,
         };
       });
       setSessions(mapped);
@@ -137,5 +148,43 @@ export function useSessionsData(): UseSessionsDataState {
     [clinicId, fetchSessions]
   );
 
-  return { sessions, loading, error, refetch: fetchSessions, createSession };
+  const updateSession = useCallback(
+    async (id: string | number, input: CreateSessionInput): Promise<boolean> => {
+      try {
+        const payload: Record<string, unknown> = {
+          patientId: input.patient_id,
+          date: input.scheduled_at,
+        };
+        if (input.professional_id) payload.professionalId = input.professional_id;
+        if (input.notes) payload.notes = input.notes;
+        await api.patch(`/sessions/${id}`, payload);
+        toast.success("Sessão atualizada");
+        await fetchSessions();
+        return true;
+      } catch (err) {
+        const apiErr = err as ApiError;
+        toast.error(apiErr?.message ?? "Erro ao atualizar sessão");
+        return false;
+      }
+    },
+    [fetchSessions]
+  );
+
+  const deleteSession = useCallback(
+    async (id: string | number): Promise<boolean> => {
+      try {
+        await api.delete(`/sessions/${id}`);
+        toast.success("Sessão excluída");
+        await fetchSessions();
+        return true;
+      } catch (err) {
+        const apiErr = err as ApiError;
+        toast.error(apiErr?.message ?? "Erro ao excluir sessão");
+        return false;
+      }
+    },
+    [fetchSessions]
+  );
+
+  return { sessions, loading, error, refetch: fetchSessions, createSession, updateSession, deleteSession };
 }

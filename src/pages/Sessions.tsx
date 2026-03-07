@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -50,6 +49,7 @@ const Sessions = () => {
   const { sessions, loading, error, refetch, createSession, updateSession, deleteSession } = useSessionsData();
   const [editingSession, setEditingSession] = useState<typeof sessions[0] | null>(null);
   const [deletingSession, setDeletingSession] = useState<typeof sessions[0] | null>(null);
+  const [deletingInProgress, setDeletingInProgress] = useState(false);
 
   useEffect(() => {
     const handler = () => setShowSessionDialog(true);
@@ -127,7 +127,7 @@ const Sessions = () => {
           onSave={updateSession}
         />
 
-        <AlertDialog open={!!deletingSession} onOpenChange={(open) => !open && setDeletingSession(null)}>
+        <AlertDialog open={!!deletingSession} onOpenChange={(open) => !open && !deletingInProgress && setDeletingSession(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Excluir sessão</AlertDialogTitle>
@@ -136,18 +136,24 @@ const Sessions = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              <AlertDialogCancel disabled={deletingInProgress}>Cancelar</AlertDialogCancel>
+              <Button
+                variant="destructive"
+                disabled={deletingInProgress}
                 onClick={async () => {
-                  if (deletingSession) {
-                    const ok = await deleteSession(deletingSession.id);
+                  const session = deletingSession;
+                  if (!session) return;
+                  setDeletingInProgress(true);
+                  try {
+                    const ok = await deleteSession(session.id);
                     if (ok) setDeletingSession(null);
+                  } finally {
+                    setDeletingInProgress(false);
                   }
                 }}
               >
-                Excluir
-              </AlertDialogAction>
+                {deletingInProgress ? "Excluindo..." : "Excluir"}
+              </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

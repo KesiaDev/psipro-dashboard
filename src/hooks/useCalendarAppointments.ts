@@ -156,7 +156,7 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
           clinicId,
         };
         if (input.professional_id != null) payload.professionalId = input.professional_id;
-        if (input.duration_minutes != null) payload.durationMinutes = input.duration_minutes;
+        // Backend DTO não aceita durationMinutes na criação; usar default no servidor
         if (input.type != null) payload.type = input.type;
         if (input.status != null) payload.status = input.status;
         await api.post("/appointments", payload);

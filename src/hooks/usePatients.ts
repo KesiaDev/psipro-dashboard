@@ -109,17 +109,23 @@ export function usePatients(): UsePatientsState {
   }, [clinicId, fetchPatients]);
 
   const createPatient = useCallback(async (input: CreatePatientInput): Promise<Patient | null> => {
+    const name = (input.full_name ?? "").trim();
+    if (!name) {
+      const msg = "Nome é obrigatório.";
+      toast.error(msg);
+      throw new Error(msg);
+    }
     try {
-      // Tenta snake_case (comum em Prisma/PostgreSQL); backend pode esperar camelCase
+      // Backend CreatePatientDto espera: name, birthDate, observations (camelCase) - sem extras p/ forbidNonWhitelisted
       const payload: Record<string, unknown> = {
-        full_name: input.full_name?.trim() ?? "",
+        name,
         status: input.status ?? "active",
       };
       if (input.email?.trim()) payload.email = input.email.trim();
       if (input.phone?.trim()) payload.phone = input.phone.trim();
-      if (input.date_of_birth?.trim()) payload.date_of_birth = input.date_of_birth.trim();
+      if (input.date_of_birth?.trim()) payload.birthDate = input.date_of_birth.trim();
       if (input.cpf?.trim()) payload.cpf = input.cpf.trim();
-      if (input.notes?.trim()) payload.notes = input.notes.trim();
+      if (input.notes?.trim()) payload.observations = input.notes.trim();
       const res = await api.post<Patient | Record<string, unknown>>("/patients", payload);
       toast.success("Paciente criado com sucesso");
       await fetchPatients();

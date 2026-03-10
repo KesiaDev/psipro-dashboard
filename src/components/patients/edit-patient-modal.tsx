@@ -89,17 +89,14 @@ export function EditPatientModal({ open, onOpenChange, patientId, patientData, o
     if (!validate()) return;
     setSaving(true);
     try {
-      // Backend NestJS espera camelCase (como em sessions e appointments)
+      // Backend UpdatePatientDto espera: name, birthDate, observations (camelCase)
       const payload: Record<string, unknown> = {
-        fullName: form.full_name.trim(),
+        name: form.full_name.trim(),
         status: form.status,
       };
-      payload.email = form.email?.trim() || null;
-      payload.phone = form.phone?.trim() || null;
-      payload.dateOfBirth = form.date_of_birth
-        ? new Date(form.date_of_birth + "T00:00:00").toISOString()
-        : null;
-      payload.gender = form.gender || null;
+      payload.email = form.email?.trim() || undefined;
+      payload.phone = form.phone?.trim() || undefined;
+      payload.birthDate = form.date_of_birth || undefined;
       await api.patch(`/patients/${patientId}`, payload);
       toast.success("Paciente atualizado com sucesso");
       onOpenChange(false);

@@ -54,7 +54,7 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     const status = error.response?.status ?? 0;
-    const data = error.response?.data as { message?: string; error?: string } | undefined;
+    const data = error.response?.data as { message?: string | string[]; error?: string } | undefined;
 
     if (status === 401) {
       localStorage.removeItem(TOKEN_KEY);
@@ -64,9 +64,12 @@ axiosInstance.interceptors.response.use(
       window.dispatchEvent(new CustomEvent("psipro:auth:401"));
     }
 
+    const rawMsg = data?.message ?? data?.error ?? error.message ?? `Erro ${status}`;
+    const message = Array.isArray(rawMsg) ? rawMsg.join(". ") : String(rawMsg ?? "");
+
     const apiError: ApiError = {
       status,
-      message: data?.message ?? data?.error ?? error.message ?? `Erro ${status}`,
+      message,
       data: error.response?.data,
     };
 

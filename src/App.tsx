@@ -8,6 +8,7 @@ import { ClinicGate } from "@/components/ClinicGate";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ThemeProvider } from "next-themes";
+import { ThemeProvider as PaletteProvider } from "@/contexts/ThemeContext";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import Index from "./pages/Index";
 import Patients from "./pages/Patients";
@@ -33,6 +34,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <PaletteProvider>
       <AccessibilityProvider>
         <TooltipProvider>
         <BrowserRouter>
@@ -64,6 +66,7 @@ const App = () => (
         </BrowserRouter>
         </TooltipProvider>
       </AccessibilityProvider>
+      </PaletteProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

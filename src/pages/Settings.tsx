@@ -9,11 +9,49 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Camera, Bell, Shield, Clock, Smartphone, Accessibility } from "lucide-react";
+import { Save, Camera, Bell, Shield, Clock, Smartphone, Accessibility, Palette, Check } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { useTheme } from "next-themes";
+import { useThemePalette, PALETTES } from "@/contexts/ThemeContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
+
+function PaletteGrid() {
+  const { palette, setPalette } = useThemePalette();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const swatchBg = isDark ? "bg-card border border-border" : "bg-card border border-border";
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+      {PALETTES.map((p) => {
+        const isSelected = palette === p.id;
+        return (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => setPalette(p.id)}
+            className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all border-2 hover:border-primary/50 ${
+              isSelected ? "border-primary ring-2 ring-primary/20" : "border-transparent"
+            } ${swatchBg}`}
+            aria-pressed={isSelected ? "true" : "false"}
+            aria-label={`Paleta ${p.name}${isSelected ? ", selecionada" : ""}`}
+          >
+            <div
+              className="w-10 h-10 rounded-full shadow-inner border border-black/10 flex items-center justify-center"
+              style={{ backgroundColor: p.primary }}
+            >
+              {isSelected && <Check className="h-5 w-5 text-white drop-shadow-md" strokeWidth={3} />}
+            </div>
+            <span className="text-xs font-medium text-foreground text-center leading-tight">{p.name}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function getInitials(name: string): string {
   return name
@@ -121,6 +159,9 @@ const Settings = () => {
             </TabsTrigger>
             <TabsTrigger value="integrations" className="rounded-lg data-[state=active]:bg-accent data-[state=active]:text-accent-foreground px-4 py-2 text-sm">
               Integrações
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="rounded-lg data-[state=active]:bg-accent data-[state=active]:text-accent-foreground px-4 py-2 text-sm">
+              Aparência
             </TabsTrigger>
             <TabsTrigger value="accessibility" className="rounded-lg data-[state=active]:bg-accent data-[state=active]:text-accent-foreground px-4 py-2 text-sm">
               Acessibilidade
@@ -348,6 +389,35 @@ const Settings = () => {
                 <Button variant="gold" className="rounded-xl gap-2" onClick={handleUpdatePassword} disabled={passwordSaving}>
                   <Save className="h-4 w-4" /> {passwordSaving ? "Atualizando..." : "Atualizar Senha"}
                 </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Appearance Tab */}
+          <TabsContent value="appearance" className="space-y-6">
+            <div className="card-soft p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <Palette className="h-5 w-5 text-primary" />
+                <h3 className="font-heading text-base font-semibold text-foreground">Aparência</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-6">
+                Escolha o modo claro ou escuro e sua paleta de cores preferida. As cores se aplicam em todo o dashboard.
+              </p>
+
+              <div className="space-y-5">
+                <div className="flex items-center justify-between py-3 border-b border-border/50">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Modo claro / escuro</p>
+                    <p className="text-xs text-muted-foreground">Alterne entre tema claro e escuro</p>
+                  </div>
+                  <ThemeToggle />
+                </div>
+
+                <div className="pt-4">
+                  <p className="text-sm font-medium text-foreground mb-3">Paleta de cores</p>
+                  <p className="text-xs text-muted-foreground mb-4">Selecione o conjunto de cores que combina com você</p>
+                  <PaletteGrid />
+                </div>
               </div>
             </div>
           </TabsContent>

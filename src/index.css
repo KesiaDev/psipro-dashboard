@@ -173,6 +173,142 @@
     --gold-light: 42 30% 20%;
     --gold-dark: 42 55% 40%;
   }
+
+  /* Paletas de cores – data-palette no html */
+  [data-palette="terracotta"] {
+    --primary: 21 55% 50%;
+    --accent: 21 55% 50%;
+    --ring: 21 55% 50%;
+    --sidebar-primary: 21 55% 50%;
+    --sidebar-accent: 21 30% 95%;
+    --sidebar-accent-foreground: 21 55% 35%;
+    --sidebar-ring: 21 55% 50%;
+    --gold: 21 55% 50%;
+    --gold-light: 21 40% 90%;
+    --gold-dark: 21 55% 40%;
+    --chart-amber: 21 55% 50%;
+  }
+  html.dark[data-palette="terracotta"] {
+    --primary: 21 55% 50%;
+    --accent: 21 25% 15%;
+    --accent-foreground: 21 55% 70%;
+    --ring: 21 55% 50%;
+    --sidebar-primary: 21 55% 50%;
+    --sidebar-accent: 21 20% 12%;
+    --sidebar-accent-foreground: 21 55% 70%;
+    --sidebar-ring: 21 55% 50%;
+    --gold: 21 55% 50%;
+    --gold-light: 21 30% 20%;
+    --gold-dark: 21 55% 40%;
+  }
+
+  [data-palette="teal"] {
+    --primary: 174 50% 35%;
+    --accent: 174 50% 35%;
+    --ring: 174 50% 35%;
+    --sidebar-primary: 174 50% 35%;
+    --sidebar-accent: 174 30% 95%;
+    --sidebar-accent-foreground: 174 50% 25%;
+    --sidebar-ring: 174 50% 35%;
+    --gold: 174 50% 35%;
+    --gold-light: 174 40% 90%;
+    --gold-dark: 174 50% 28%;
+    --chart-amber: 174 50% 45%;
+  }
+  html.dark[data-palette="teal"] {
+    --primary: 174 45% 45%;
+    --accent: 174 25% 15%;
+    --accent-foreground: 174 45% 70%;
+    --ring: 174 45% 45%;
+    --sidebar-primary: 174 45% 45%;
+    --sidebar-accent: 174 20% 12%;
+    --sidebar-accent-foreground: 174 45% 70%;
+    --sidebar-ring: 174 45% 45%;
+    --gold: 174 45% 45%;
+    --gold-light: 174 25% 20%;
+    --gold-dark: 174 50% 35%;
+  }
+
+  [data-palette="violet"] {
+    --primary: 263 84% 58%;
+    --accent: 263 84% 58%;
+    --ring: 263 84% 58%;
+    --sidebar-primary: 263 84% 58%;
+    --sidebar-accent: 263 30% 95%;
+    --sidebar-accent-foreground: 263 84% 35%;
+    --sidebar-ring: 263 84% 58%;
+    --gold: 263 84% 58%;
+    --gold-light: 263 40% 90%;
+    --gold-dark: 263 84% 45%;
+    --chart-amber: 263 84% 58%;
+  }
+  html.dark[data-palette="violet"] {
+    --primary: 263 84% 58%;
+    --accent: 263 30% 15%;
+    --accent-foreground: 263 84% 75%;
+    --ring: 263 84% 58%;
+    --sidebar-primary: 263 84% 58%;
+    --sidebar-accent: 263 25% 12%;
+    --sidebar-accent-foreground: 263 84% 75%;
+    --sidebar-ring: 263 84% 58%;
+    --gold: 263 84% 58%;
+    --gold-light: 263 30% 20%;
+    --gold-dark: 263 84% 45%;
+  }
+
+  [data-palette="rose"] {
+    --primary: 347 77% 50%;
+    --accent: 347 77% 50%;
+    --ring: 347 77% 50%;
+    --sidebar-primary: 347 77% 50%;
+    --sidebar-accent: 347 30% 95%;
+    --sidebar-accent-foreground: 347 77% 35%;
+    --sidebar-ring: 347 77% 50%;
+    --gold: 347 77% 50%;
+    --gold-light: 347 40% 90%;
+    --gold-dark: 347 77% 40%;
+    --chart-amber: 347 77% 55%;
+  }
+  html.dark[data-palette="rose"] {
+    --primary: 347 77% 55%;
+    --accent: 347 30% 15%;
+    --accent-foreground: 347 77% 75%;
+    --ring: 347 77% 55%;
+    --sidebar-primary: 347 77% 55%;
+    --sidebar-accent: 347 25% 12%;
+    --sidebar-accent-foreground: 347 77% 75%;
+    --sidebar-ring: 347 77% 55%;
+    --gold: 347 77% 55%;
+    --gold-light: 347 30% 20%;
+    --gold-dark: 347 77% 45%;
+  }
+
+  [data-palette="forest"] {
+    --primary: 142 64% 26%;
+    --accent: 142 64% 26%;
+    --ring: 142 64% 26%;
+    --sidebar-primary: 142 64% 26%;
+    --sidebar-accent: 142 30% 95%;
+    --sidebar-accent-foreground: 142 64% 20%;
+    --sidebar-ring: 142 64% 26%;
+    --gold: 142 64% 26%;
+    --gold-light: 142 40% 90%;
+    --gold-dark: 142 64% 20%;
+    --chart-amber: 142 50% 40%;
+  }
+  html.dark[data-palette="forest"] {
+    --primary: 142 50% 45%;
+    --accent: 142 30% 15%;
+    --accent-foreground: 142 50% 70%;
+    --ring: 142 50% 45%;
+    --sidebar-primary: 142 50% 45%;
+    --sidebar-accent: 142 25% 12%;
+    --sidebar-accent-foreground: 142 50% 70%;
+    --sidebar-ring: 142 50% 45%;
+    --gold: 142 50% 45%;
+    --gold-light: 142 30% 20%;
+    --gold-dark: 142 64% 30%;
+  }
 }
 
 @layer base {
@@ -200,7 +336,7 @@
   }
 
   .gold-gradient {
-    background: linear-gradient(135deg, hsl(42 52% 53%), hsl(42 65% 65%));
+    background: linear-gradient(135deg, hsl(var(--gold)), color-mix(in srgb, hsl(var(--gold)) 80%, white));
   }
 
   .dark-gradient {
@@ -208,7 +344,7 @@
   }
 
   .gold-text {
-    background: linear-gradient(135deg, hsl(42 52% 53%), hsl(42 65% 65%));
+    background: linear-gradient(135deg, hsl(var(--gold)), color-mix(in srgb, hsl(var(--gold)) 80%, white));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

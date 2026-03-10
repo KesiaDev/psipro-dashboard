@@ -116,16 +116,22 @@ export function usePatients(): UsePatientsState {
       throw new Error(msg);
     }
     try {
-      // Backend CreatePatientDto espera: name, birthDate, observations (camelCase) - sem extras p/ forbidNonWhitelisted
-      const payload: Record<string, unknown> = {
+      // Backend CreatePatientDto: name (obrigatório), birthDate, observations. full_name/nome como alias.
+      const payload: Record<string, string> = {
         name,
+        full_name: name, // redundância para backends que usam Transform de full_name
         status: input.status ?? "active",
       };
-      if (input.email?.trim()) payload.email = input.email.trim();
-      if (input.phone?.trim()) payload.phone = input.phone.trim();
-      if (input.date_of_birth?.trim()) payload.birthDate = input.date_of_birth.trim();
-      if (input.cpf?.trim()) payload.cpf = input.cpf.trim();
-      if (input.notes?.trim()) payload.observations = input.notes.trim();
+      const trimmedEmail = input.email?.trim();
+      if (trimmedEmail) payload.email = trimmedEmail;
+      const trimmedPhone = input.phone?.trim();
+      if (trimmedPhone) payload.phone = trimmedPhone;
+      const dob = input.date_of_birth?.trim();
+      if (dob) payload.birthDate = dob;
+      const trimmedCpf = input.cpf?.trim();
+      if (trimmedCpf) payload.cpf = trimmedCpf;
+      const trimmedNotes = input.notes?.trim();
+      if (trimmedNotes) payload.observations = trimmedNotes;
       const res = await api.post<Patient | Record<string, unknown>>("/patients", payload);
       toast.success("Paciente criado com sucesso");
       await fetchPatients();

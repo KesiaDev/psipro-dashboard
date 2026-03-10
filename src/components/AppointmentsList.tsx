@@ -1,6 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Pencil } from "lucide-react";
 import type { TodayAppointment } from "@/hooks/useTodayAppointments";
 import type { ApiError } from "@/services/api";
 
@@ -27,6 +30,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export function AppointmentsList({ appointments, loading, error }: AppointmentsListProps) {
+  const navigate = useNavigate();
   const today = new Date().toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "short",
@@ -73,28 +77,46 @@ export function AppointmentsList({ appointments, loading, error }: AppointmentsL
         </div>
       ) : (
         <div className="space-y-3">
-          {appointments.map((apt) => (
-            <div
-              key={apt.id}
-              className="flex items-center gap-4 rounded-xl border border-border p-3.5 transition-colors hover:bg-muted/50"
-            >
-              <Avatar className="h-10 w-10">
-                <AvatarFallback className="gold-gradient text-primary-foreground text-xs font-semibold">
-                  {apt.initials ?? "—"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">{apt.patient}</p>
-                <p className="text-xs text-muted-foreground">{apt.type}</p>
+          {appointments.map((apt) => {
+            const targetId = apt.session_id ?? apt.id;
+            return (
+              <div
+                key={apt.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/sessions/${targetId}`)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/sessions/${targetId}`); } }}
+                className="flex items-center gap-4 rounded-xl border border-border p-3.5 transition-colors hover:bg-muted/50 cursor-pointer group"
+                aria-label={`Consultar ${apt.patient}, ${apt.time}, ${statusLabels[apt.status] ?? apt.status}. Pressione Enter para ver ou editar.`}
+              >
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback className="gold-gradient text-primary-foreground text-xs font-semibold">
+                    {apt.initials ?? "—"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{apt.patient}</p>
+                  <p className="text-xs text-muted-foreground">{apt.type}</p>
+                </div>
+                <div className="text-right flex flex-col items-end gap-1.5 flex-shrink-0">
+                  <span className="text-sm font-semibold text-foreground">{apt.time}</span>
+                  <Badge variant="secondary" className={`text-[10px] font-medium px-2 py-0.5 rounded-lg ${statusStyles[apt.status] ?? statusStyles.pending}`}>
+                    {statusLabels[apt.status] ?? apt.status}
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 opacity-70 group-hover:opacity-100"
+                  onClick={(e) => { e.stopPropagation(); navigate(`/sessions/${targetId}`); }}
+                  title="Editar consulta"
+                  aria-label="Editar consulta"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
               </div>
-              <div className="text-right flex flex-col items-end gap-1.5">
-                <span className="text-sm font-semibold text-foreground">{apt.time}</span>
-                <Badge variant="secondary" className={`text-[10px] font-medium px-2 py-0.5 rounded-lg ${statusStyles[apt.status] ?? statusStyles.pending}`}>
-                  {statusLabels[apt.status] ?? apt.status}
-                </Badge>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

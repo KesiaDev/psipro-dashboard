@@ -110,23 +110,46 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
         const aptRaw = appointmentsRes.appointments ?? appointmentsRes.data ?? (Array.isArray(appointmentsRes) ? appointmentsRes : []);
         const sessRaw = sessionsRes.sessions ?? sessionsRes.data ?? (Array.isArray(sessionsRes) ? sessionsRes : []);
 
-        const sessInRange = (sessRaw as Record<string, unknown>[]).filter((s) => {
+        // Remove duplicatas por id dentro de cada fonte (API pode retornar o mesmo item 2x)
+        const dedupeById = <T extends Record<string, unknown>>(arr: T[], idKey = "id"): T[] => {
+          const seen = new Set<string>();
+          return arr.filter((item) => {
+            const id = String(item[idKey] ?? "");
+            if (!id || seen.has(id)) return false;
+            seen.add(id);
+            return true;
+          });
+        };
+        const aptDeduped = dedupeById(aptRaw as Record<string, unknown>[]);
+        const sessDeduped = dedupeById(sessRaw as Record<string, unknown>[]);
+
+        const sessInRange = sessDeduped.filter((s) => {
           const dateStr = s.start_at ?? s.scheduled_at ?? s.date;
           if (!dateStr) return false;
           const d = new Date(dateStr as string);
           return d >= weekStart && d <= endDateObj;
         });
 
-        const aptMapped = (aptRaw as Record<string, unknown>[]).map((a) => toCalendarAppointment(a));
-        const dedupKey = (p: string, d: string | undefined) =>
-          `${(p ?? "").trim().toLowerCase()}|${d ? new Date(d).toISOString().slice(0, 16) : ""}`;
-        const aptKeys = new Set(aptMapped.map((a) => dedupKey(a.patient, a.date)));
+        const aptMapped = aptDeduped.map((a) => toCalendarAppointment(a));
+        const aptIds = new Set(aptDeduped.map((a) => String(a.id ?? "")));
+        const dedupKey = (p: string, pid: string | undefined, d: string | undefined) =>
+          `${(pid ?? (p ?? "").trim().toLowerCase())}|${d ? new Date(d).toISOString().slice(0, 16) : ""}`;
+        const aptKeys = new Set(aptMapped.map((a) => dedupKey(a.patient, undefined, a.date)));
 
         const sessMapped = sessInRange
+          .filter((s) => !aptIds.has(String(s.id ?? "")))
           .map((s) => toCalendarAppointment(s, "sess"))
-          .filter((s) => !aptKeys.has(dedupKey(s.patient, s.date)));
+          .filter((s) => !aptKeys.has(dedupKey(s.patient, undefined, s.date)));
 
-        const mapped: CalendarAppointment[] = [...aptMapped, ...sessMapped].sort((a, b) => {
+        const seenIds = new Set<string>();
+        const merged = [...aptMapped, ...sessMapped].filter((item) => {
+          const id = String(item.id);
+          if (seenIds.has(id)) return false;
+          seenIds.add(id);
+          return true;
+        });
+
+        const mapped: CalendarAppointment[] = merged.sort((a, b) => {
           const dA = a.date ? new Date(a.date).getTime() : 0;
           const dB = b.date ? new Date(b.date).getTime() : 0;
           return dA - dB;

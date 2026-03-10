@@ -13,9 +13,12 @@ export interface SessionDetail {
   id: string | number;
   patient: string;
   patientId?: string;
+  patient_id?: string;
+  professional_id?: string;
   date: string;
   time?: string;
   duration?: string;
+  duration_minutes?: number;
   type?: string;
   status?: string;
   notes?: string;
@@ -97,17 +100,21 @@ export function useSessionDetail(id: string | undefined): UseSessionDetailState 
           ? (data as Record<string, unknown>)
           : undefined;
 
+      const durationMin = Number(data.duration_minutes ?? data.duration ?? 50);
       setSession({
         id: data.id ?? id,
         patient: patientName,
         patientId: data.patient_id ? String(data.patient_id) : undefined,
+        patient_id: data.patient_id != null ? String(data.patient_id) : undefined,
+        professional_id: data.professional_id != null ? String(data.professional_id) : undefined,
         date: formatDate(startAt),
         time: formatTime(startAt),
-        duration: String(data.duration_minutes ?? data.duration ?? ""),
+        duration: durationMin >= 60 ? `${Math.floor(durationMin / 60)}h ${durationMin % 60 > 0 ? `${durationMin % 60}min` : ""}`.trim() : `${durationMin} min`,
+        duration_minutes: durationMin,
         type: (data.type as string) ?? (data.session_type as string),
         status: data.status as string,
         notes: data.notes as string,
-        scheduled_at: data.scheduled_at as string,
+        scheduled_at: (data.scheduled_at as string) ?? (data.start_at as string),
         start_at: data.start_at as string,
         aiAnalysis: parseAIAnalysis(aiRaw ?? aiFromTopLevel),
       });

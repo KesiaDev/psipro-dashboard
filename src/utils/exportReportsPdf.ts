@@ -116,8 +116,7 @@ export async function exportReportsToPdf(
 
     doc.save(`relatorio-psipro-${new Date().toISOString().slice(0, 10)}.pdf`);
     toast.success("PDF exportado com sucesso");
-  } catch (err) {
-    console.error("Erro ao exportar PDF:", err);
+  } catch {
     toast.error("Erro ao exportar PDF");
   }
 }

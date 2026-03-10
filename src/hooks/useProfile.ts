@@ -84,7 +84,7 @@ export function useProfile(): UseProfileState {
 
   const updatePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
     try {
-      await api.put("/users/me/password", { currentPassword, newPassword });
+      await api.put("/users/password", { currentPassword, newPassword });
       toast.success("Senha atualizada com sucesso");
       return true;
     } catch {

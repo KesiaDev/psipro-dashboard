@@ -22,8 +22,8 @@ export interface ApiError {
 
 const baseURL = (import.meta.env.VITE_API_URL || import.meta.env.NEXT_PUBLIC_API_URL || "").trim();
 
-if (!baseURL) {
-  console.error("VITE_API_URL ou NEXT_PUBLIC_API_URL não configurada no .env");
+if (!baseURL && import.meta.env.DEV) {
+  console.warn("VITE_API_URL não configurada no .env");
 }
 
 const axiosInstance = axios.create({

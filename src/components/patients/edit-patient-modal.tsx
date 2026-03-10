@@ -100,7 +100,7 @@ export function EditPatientModal({ open, onOpenChange, patientId, patientData, o
         ? new Date(form.date_of_birth + "T00:00:00").toISOString()
         : null;
       payload.gender = form.gender || null;
-      await api.put(`/patients/${patientId}`, payload);
+      await api.patch(`/patients/${patientId}`, payload);
       toast.success("Paciente atualizado com sucesso");
       onOpenChange(false);
       onSuccess?.();

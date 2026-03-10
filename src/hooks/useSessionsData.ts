@@ -106,7 +106,6 @@ export function useSessionsData(): UseSessionsDataState {
           notes: Boolean(s.has_notes ?? s.notes ?? false),
           scheduled_at: startAt as string,
           professional_id: s.professional_id != null ? String(s.professional_id) : undefined,
-          duration_minutes: durationMin,
         };
       });
       setSessions(mapped);
@@ -156,6 +155,7 @@ export function useSessionsData(): UseSessionsDataState {
           date: input.scheduled_at,
         };
         if (input.professional_id) payload.professionalId = input.professional_id;
+        if (input.duration_minutes != null) payload.duration = input.duration_minutes;
         if (input.notes) payload.notes = input.notes;
         await api.patch(`/sessions/${id}`, payload);
         toast.success("Sessão atualizada");

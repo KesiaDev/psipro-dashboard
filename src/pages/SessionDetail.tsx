@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -17,18 +18,48 @@ import {
   AlertTriangle,
   User,
   Volume2,
+  Pencil,
 } from "lucide-react";
+import { useClinic } from "@/contexts/ClinicContext";
+import { usePatients } from "@/hooks/usePatients";
+import { useProfessionals } from "@/hooks/useProfessionals";
+import { useSessionsData } from "@/hooks/useSessionsData";
+import { EditSessionDialog } from "@/components/sessions/EditSessionDialog";
 import { speakText, isSpeechSupported } from "@/lib/speech";
 
 const SessionDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { selectedClinic } = useClinic();
+  const { patients } = usePatients();
+  const { professionals } = useProfessionals(selectedClinic?.id);
+  const { sessions, updateSession } = useSessionsData();
   const { session, loading, error, refetch } = useSessionDetail(id);
-  const sessionFromList = (location.state as { sessionFromList?: { id: string | number; patient: string; date: string; time: string; duration: string; type: string; status: string } })?.sessionFromList;
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const sessionFromList = (location.state as { sessionFromList?: { id: string | number; patient: string; date: string; time: string; duration: string; type: string; status: string; patient_id?: string } })?.sessionFromList;
+  const sessionFromSessionsList = id && !session && (error as { status?: number })?.status === 404
+    ? sessions.find((s) => String(s.id) === String(id))
+    : null;
+  const fallbackSession = sessionFromList ?? (sessionFromSessionsList
+    ? { id: sessionFromSessionsList.id, patient: sessionFromSessionsList.patient, date: sessionFromSessionsList.date, time: sessionFromSessionsList.time, duration: sessionFromSessionsList.duration, type: sessionFromSessionsList.type, status: sessionFromSessionsList.status, patientId: sessionFromSessionsList.patient_id }
+    : null);
 
-  const displaySession = session ?? (error && (error as { status?: number }).status === 404 && sessionFromList
-    ? { id: sessionFromList.id, patient: sessionFromList.patient, date: sessionFromList.date, time: sessionFromList.time, duration: sessionFromList.duration, type: sessionFromList.type, status: sessionFromList.status }
+  const displaySession = session ?? fallbackSession;
+  const sessionForEdit = session ?? (sessionFromSessionsList
+    ? {
+        id: sessionFromSessionsList.id,
+        patient: sessionFromSessionsList.patient,
+        patient_id: sessionFromSessionsList.patient_id,
+        date: sessionFromSessionsList.date,
+        time: sessionFromSessionsList.time ?? "",
+        duration: sessionFromSessionsList.duration ?? "",
+        duration_minutes: sessionFromSessionsList.duration_minutes ?? 50,
+        type: sessionFromSessionsList.type ?? "Consulta",
+        status: sessionFromSessionsList.status,
+        scheduled_at: sessionFromSessionsList.scheduled_at,
+        professional_id: sessionFromSessionsList.professional_id,
+      }
     : null);
 
   if (error && !displaySession) {
@@ -127,18 +158,56 @@ const SessionDetail = () => {
               </p>
             </div>
           </div>
-          {"patientId" in displaySession && displaySession.patientId && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl"
-              onClick={() => navigate(`/patients/${displaySession.patientId}`)}
-            >
-              <User className="h-4 w-4 mr-2" />
-              Ver paciente
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {sessionForEdit && (sessionForEdit.patient_id ?? (sessionForEdit as { patientId?: string }).patientId) && (
+              <Button
+                variant="gold"
+                size="sm"
+                className="rounded-xl gap-2"
+                onClick={() => setShowEditDialog(true)}
+              >
+                <Pencil className="h-4 w-4" />
+                Editar
+              </Button>
+            )}
+            {"patientId" in displaySession && displaySession.patientId && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={() => navigate(`/patients/${displaySession.patientId}`)}
+              >
+                <User className="h-4 w-4 mr-2" />
+                Ver paciente
+              </Button>
+            )}
+          </div>
         </div>
+
+        {sessionForEdit && (
+          <EditSessionDialog
+            open={showEditDialog}
+            onOpenChange={setShowEditDialog}
+            session={{
+              id: sessionForEdit.id,
+              patient: sessionForEdit.patient,
+              patient_id: sessionForEdit.patient_id ?? ("patientId" in sessionForEdit ? sessionForEdit.patientId : undefined),
+              initials: sessionForEdit.patient?.slice(0, 2).toUpperCase() ?? "",
+              date: sessionForEdit.date,
+              time: sessionForEdit.time ?? "",
+              duration: sessionForEdit.duration ?? "",
+              duration_minutes: sessionForEdit.duration_minutes ?? 50,
+              type: sessionForEdit.type ?? "Consulta",
+              status: (sessionForEdit.status as "completed" | "scheduled" | "cancelled" | "in-progress") ?? "scheduled",
+              notes: false,
+              scheduled_at: "scheduled_at" in sessionForEdit ? sessionForEdit.scheduled_at : ("start_at" in sessionForEdit ? sessionForEdit.start_at : undefined),
+              professional_id: sessionForEdit.professional_id,
+            }}
+            patients={patients}
+            professionals={professionals}
+            onSave={updateSession}
+          />
+        )}
 
         {/* Análise da IA */}
         <section className="space-y-4" aria-labelledby="ai-analysis-heading">

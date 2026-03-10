@@ -9,9 +9,12 @@ import {
   UserCheck,
   DollarSign,
   LogOut,
+  Activity,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useClinic } from "@/contexts/ClinicContext";
 import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/contexts/AuthContext";
 import { PsiProLogo } from "@/components/PsiProLogo";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -37,6 +40,7 @@ const mainNav = [
   { title: "Sessões", url: "/sessions", icon: MessageSquare },
   { title: "Financeiro", url: "/financials", icon: DollarSign },
   { title: "Relatórios", url: "/reports", icon: FileText },
+  { title: "Saúde do Sistema", url: "/system-health", icon: Activity, adminOnly: true },
 ];
 
 const bottomNav = [
@@ -57,13 +61,16 @@ function getInitials(name: string): string {
 export function AppSidebar() {
   const navigate = useNavigate();
   const { profile } = useProfile();
+  const { signOut } = useAuth();
+  const { userRole } = useClinic();
 
   const displayName = profile?.name?.trim() || "";
   const displayProfessionalType = profile?.professionalType?.trim() || "";
   const displayCrp = profile?.crp?.trim() || "";
   const hasProfile = displayName || displayProfessionalType || displayCrp;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     navigate("/login");
   };
 
@@ -82,7 +89,9 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNav.map((item) => (
+              {mainNav
+                .filter((item) => !("adminOnly" in item && item.adminOnly) || userRole === "admin" || userRole === "owner")
+                .map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
@@ -96,7 +105,8 @@ export function AppSidebar() {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+              ))
+              }
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

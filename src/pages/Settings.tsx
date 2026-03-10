@@ -253,7 +253,7 @@ const Settings = () => {
                 ))}
               </div>
               <div className="flex justify-end mt-6">
-                <Button variant="gold" className="rounded-xl gap-2">
+                <Button variant="gold" className="rounded-xl gap-2" disabled title="Em breve">
                   <Save className="h-4 w-4" /> Salvar Horários
                 </Button>
               </div>
@@ -342,7 +342,7 @@ const Settings = () => {
                   <p className="text-sm font-medium text-foreground">Autenticação em dois fatores</p>
                   <p className="text-xs text-muted-foreground">Adicione uma camada extra de segurança</p>
                 </div>
-                <Button variant="outline-gold" className="rounded-xl" size="sm">Ativar</Button>
+                <Button variant="outline-gold" className="rounded-xl" size="sm" disabled title="Em breve">Ativar</Button>
               </div>
               <div className="flex justify-end mt-6">
                 <Button variant="gold" className="rounded-xl gap-2" onClick={handleUpdatePassword} disabled={passwordSaving}>

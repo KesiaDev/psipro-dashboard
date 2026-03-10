@@ -136,8 +136,8 @@ export function AddFinancialRecordDialog({ patients, onSave }: Props) {
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as any })}>
                 <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="paid">Pago</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="paid">Pago</SelectItem>
                   <SelectItem value="overdue">Atrasado</SelectItem>
                   <SelectItem value="cancelled">Cancelado</SelectItem>
                 </SelectContent>

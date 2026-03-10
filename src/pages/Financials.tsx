@@ -4,7 +4,7 @@ import { useClinic } from "@/contexts/ClinicContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Receipt, CreditCard, Wallet, Trash2, CheckCircle } from "lucide-react";
+import { DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Receipt, CreditCard, Wallet, Trash2, CheckCircle, Clock } from "lucide-react";
 import { useFinancialRecords } from "@/hooks/useFinancialRecords";
 import { usePatients } from "@/hooks/usePatients";
 import { AddFinancialRecordDialog } from "@/components/financials/AddFinancialRecordDialog";
@@ -183,6 +183,17 @@ const Financials = () => {
                                 onClick={() => updateRecord(r.id, { status: "paid", paid_at: new Date().toISOString() })}
                               >
                                 <CheckCircle className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {r.status === "paid" && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-lg text-amber-500 hover:text-amber-400"
+                                title="Marcar como pendente"
+                                onClick={() => updateRecord(r.id, { status: "pending", paid_at: null })}
+                              >
+                                <Clock className="h-3.5 w-3.5" />
                               </Button>
                             )}
                             <Button

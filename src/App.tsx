@@ -24,7 +24,9 @@ import ResetPassword from "./pages/ResetPassword";
 import Clinics from "./pages/Clinics";
 import Psychologists from "./pages/Psychologists";
 import Financials from "./pages/Financials";
+import SystemHealth from "./pages/SystemHealth";
 import NotFound from "./pages/NotFound";
+import { AdminRoute } from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +56,7 @@ const App = () => (
                 <Route path="/sessions/:id" element={<ProtectedRoute><ClinicGate><SessionDetail /></ClinicGate></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute><ClinicGate><Reports /></ClinicGate></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><ClinicGate><Settings /></ClinicGate></ProtectedRoute>} />
+                <Route path="/system-health" element={<ProtectedRoute><ClinicGate><AdminRoute><SystemHealth /></AdminRoute></ClinicGate></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </ClinicProvider>

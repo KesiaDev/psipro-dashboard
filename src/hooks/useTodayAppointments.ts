@@ -4,6 +4,7 @@ import { useClinic } from "@/contexts/ClinicContext";
 
 export interface TodayAppointment {
   id: string | number;
+  session_id?: string | number;
   patient: string;
   initials?: string;
   patientName?: string;
@@ -42,6 +43,7 @@ export function useTodayAppointments(): UseTodayAppointmentsState {
       const raw = res.appointments ?? res.data ?? (Array.isArray(res) ? res : []);
       const mapped: TodayAppointment[] = raw.map((a: Record<string, unknown>) => ({
         id: a.id ?? "",
+        session_id: a.session_id != null ? a.session_id : a.sessionId != null ? a.sessionId : undefined,
         patient: (a.patient as string) ?? (a.patientName as string) ?? "—",
         initials: (a.initials as string) ?? getInitials(((a.patient as string) ?? a.patientName as string) ?? ""),
         time: (a.time as string) ?? (a.startTime as string) ?? "",

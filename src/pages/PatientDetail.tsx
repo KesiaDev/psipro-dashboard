@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { usePatient } from "@/hooks/usePatient";
 import { usePatientEvolution } from "@/hooks/usePatientEvolution";
 import { usePatientPatterns } from "@/hooks/usePatientPatterns";
+import { useEmotionalEvolution } from "@/hooks/useEmotionalEvolution";
+import { EmotionTimelineChart } from "@/components/patients/EmotionTimelineChart";
+import { EmotionFrequencyCloud } from "@/components/patients/EmotionFrequencyCloud";
+import { EmotionTrendIndicators } from "@/components/patients/EmotionTrendIndicators";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { ArrowLeft, Mail, Phone, Calendar, FileText, Clock, Sparkles, Heart, Tag, GitBranch, AlertTriangle } from "lucide-react";
@@ -70,6 +74,7 @@ const PatientDetail = () => {
   const { patient, loading, error, refetch } = usePatient(id);
   const { evolution, loading: evolutionLoading } = usePatientEvolution(id);
   const { patterns, loading: patternsLoading } = usePatientPatterns(id);
+  const { data: emotionalData, loading: emotionalLoading } = useEmotionalEvolution(id);
 
   if (error) {
     const err = error as { status?: number; message?: string };
@@ -385,6 +390,56 @@ const PatientDetail = () => {
             <div className="card-soft p-8 text-center">
               <p className="text-muted-foreground">
                 Os dados de evolução terapêutica serão exibidos conforme as sessões forem analisadas pela IA.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Evolução Emocional */}
+        <div className="space-y-4">
+          <h2 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
+            <Heart className="h-5 w-5 text-primary" />
+            Evolução emocional do paciente
+          </h2>
+
+          {emotionalLoading ? (
+            <div className="card-soft p-8">
+              <LoadingSkeleton variant="list" />
+            </div>
+          ) : emotionalData &&
+            (emotionalData.timelineData.length > 0 ||
+              emotionalData.emotionFrequency.length > 0 ||
+              emotionalData.trend.length > 0) ? (
+            <div className="card-soft p-6 space-y-6">
+              {emotionalData.timelineData.length > 0 && (
+                <div>
+                  <h3 className="font-heading text-base font-semibold text-foreground mb-4">
+                    Linha do tempo emocional
+                  </h3>
+                  <EmotionTimelineChart data={emotionalData.timelineData} />
+                </div>
+              )}
+              {emotionalData.emotionFrequency.length > 0 && (
+                <div>
+                  <h3 className="font-heading text-base font-semibold text-foreground mb-4">
+                    Emoções mais frequentes
+                  </h3>
+                  <EmotionFrequencyCloud items={emotionalData.emotionFrequency} />
+                </div>
+              )}
+              {emotionalData.trend.length > 0 && (
+                <div>
+                  <h3 className="font-heading text-base font-semibold text-foreground mb-4">
+                    Tendências
+                  </h3>
+                  <EmotionTrendIndicators trends={emotionalData.trend} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="card-soft p-8 text-center">
+              <p className="text-muted-foreground">
+                Os dados aparecerão após as sessões serem analisadas pela IA.
               </p>
             </div>
           )}

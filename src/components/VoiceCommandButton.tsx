@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { startListening, isVoiceRecognitionSupported, type VoiceCommand } from "@/lib/voiceCommands";
+import { startListening, isVoiceRecognitionSupported, VOICE_SUGGESTIONS, type VoiceCommand } from "@/lib/voiceCommands";
 import { toast } from "sonner";
 
 const VOICE_EVENT_OPEN_NEW_SESSION = "psipro:voice:open-new-session";
@@ -18,12 +18,15 @@ export function VoiceCommandButton() {
         navigate("/sessions");
         window.dispatchEvent(new CustomEvent(VOICE_EVENT_OPEN_NEW_SESSION));
         break;
-      case "abrir agenda":
+      case "agenda":
         navigate("/calendar");
         break;
       case "buscar paciente":
         navigate("/patients");
         window.dispatchEvent(new CustomEvent(VOICE_EVENT_FOCUS_PATIENT_SEARCH));
+        break;
+      case "dashboard":
+        navigate("/");
         break;
     }
   };
@@ -36,7 +39,7 @@ export function VoiceCommandButton() {
     if (isListening) return;
 
     setIsListening(true);
-    toast.info("Ouvindo... Diga um comando como: nova sessão, abrir agenda, buscar paciente.");
+    toast.info(`Ouvindo... Diga: ${VOICE_SUGGESTIONS.join(", ")}.`);
 
     startListening({
       onCommand: (command) => {
@@ -68,7 +71,7 @@ export function VoiceCommandButton() {
       className="rounded-xl gap-2 text-muted-foreground hover:text-foreground"
       onClick={handleClick}
       disabled={isListening}
-      aria-label="Ativar comando de voz. Comandos: nova sessão, abrir agenda, buscar paciente"
+      aria-label="Ativar comando de voz. Comandos: nova sessão, pacientes, agenda de hoje, dashboard"
     >
       <Mic className={`h-4 w-4 ${isListening ? "animate-pulse text-primary" : ""}`} aria-hidden="true" />
       {isListening ? "Ouvindo..." : "Comando de voz"}

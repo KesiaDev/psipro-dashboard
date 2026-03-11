@@ -1,17 +1,23 @@
 /**
  * Web Speech API - reconhecimento de voz para comandos.
+ * Alinhado ao PsiPro Mobile (VoiceCommandManager.kt).
  * Compatível com Chrome, Edge, Safari (webkitSpeechRecognition).
  * @see https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition
  */
 
-export type VoiceCommand = "nova sessão" | "abrir agenda" | "buscar paciente";
+export type VoiceCommand = "nova sessão" | "agenda" | "buscar paciente" | "dashboard";
 
 export type VoiceCommandHandler = (command: VoiceCommand, transcript: string) => void;
 
+/** Sugestões exibidas (igual ao app mobile) */
+export const VOICE_SUGGESTIONS = ["nova sessão", "pacientes", "agenda de hoje", "dashboard"];
+
+/** Mapeamento de frases reconhecidas → ação (igual ao app mobile) */
 const COMMAND_KEYWORDS: Record<VoiceCommand, string[]> = {
-  "nova sessão": ["nova sessão", "nova sessao", "criar sessão", "criar sessao"],
-  "abrir agenda": ["abrir agenda", "ir para agenda", "ver agenda", "agenda"],
-  "buscar paciente": ["buscar paciente", "buscar pacientes", "procurar paciente", "ir para pacientes"],
+  "nova sessão": ["nova sessão", "nova sessao", "novo agendamento", "agendar", "criar sessão", "criar sessao"],
+  "agenda": ["agenda", "agenda de hoje", "agenda hoje", "calendário", "calendario", "hoje", "abrir agenda", "ir para agenda", "ver agenda"],
+  "buscar paciente": ["buscar paciente", "buscar pacientes", "listar paciente", "pacientes", "procurar paciente", "ir para pacientes"],
+  "dashboard": ["dashboard", "início", "inicio", "home"],
 };
 
 function normalizeTranscript(text: string): string {
@@ -73,19 +79,27 @@ export function startListening({
   recognition.lang = "pt-BR";
   recognition.continuous = false;
   recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
+  recognition.maxAlternatives = 3; // até 3 alternativas, como no app mobile (EXTRA_MAX_RESULTS = 3)
 
   recognition.onresult = (event: SpeechRecognitionEvent) => {
     const result = event.results[event.results.length - 1];
-    const transcript = result[0]?.transcript ?? "";
-    const command = matchCommand(transcript);
+    let command: VoiceCommand | null = null;
+    let bestTranscript = "";
+    for (let i = 0; i < result.length; i++) {
+      const transcript = result[i]?.transcript ?? "";
+      if (transcript.trim()) {
+        bestTranscript = transcript;
+        command = matchCommand(transcript);
+        if (command) break;
+      }
+    }
 
     if (command) {
       onFeedback?.(`Comando detectado: ${command}`);
-      onCommand(command, transcript);
-    } else if (transcript.trim()) {
-      onNoMatch?.(transcript);
-      onFeedback?.(`Nenhum comando reconhecido em: "${transcript}"`);
+      onCommand(command, bestTranscript);
+    } else if (bestTranscript.trim()) {
+      onNoMatch?.(bestTranscript);
+      onFeedback?.(`Nenhum comando reconhecido em: "${bestTranscript}"`);
     }
   };
 

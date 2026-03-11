@@ -71,13 +71,14 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
           a: Record<string, unknown>,
           prefix = "apt"
         ): CalendarAppointment => {
-          const dateStr = a.date ?? a.scheduled_at ?? a.start_at;
-          const d = dateStr ? new Date(dateStr as string) : new Date();
+          const dateStr = (a.date ?? a.scheduledAt ?? a.scheduled_at ?? a.start_at ?? a.startsAt) as string | undefined;
+          const d = dateStr ? new Date(dateStr) : new Date();
           const dayDiff = Math.floor((d.getTime() - day0) / (24 * 60 * 60 * 1000));
           const day = Math.max(0, Math.min(4, Math.floor(dayDiff / 1)));
           const startHour = d.getHours() + d.getMinutes() / 60;
           const duration = Number(a.duration ?? a.duration_minutes ?? 60) / 60;
-          const patientName = (a.patient_name as string) ?? (a.patient as { name?: string })?.name ?? "—";
+          const pat = a.patient as { name?: string; full_name?: string } | undefined;
+          const patientName = (a.patient_name as string) ?? pat?.name ?? pat?.full_name ?? "—";
           const rawStatus = (a.status as string) ?? "pending";
           const status: "confirmed" | "pending" | "completed" =
             rawStatus === "realizada" || rawStatus === "completed" ? "completed"
@@ -107,8 +108,16 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
           ).catch(() => ({ sessions: [], data: [] })),
         ]);
 
-        const aptRaw = appointmentsRes.appointments ?? appointmentsRes.data ?? (Array.isArray(appointmentsRes) ? appointmentsRes : []);
+        const aptRawAll = appointmentsRes.appointments ?? appointmentsRes.data ?? (Array.isArray(appointmentsRes) ? appointmentsRes : []);
         const sessRaw = sessionsRes.sessions ?? sessionsRes.data ?? (Array.isArray(sessionsRes) ? sessionsRes : []);
+
+        // Filtrar appointments pelo período (backend retorna todos; aplicamos filtro local)
+        const aptRaw = (aptRawAll as Record<string, unknown>[]).filter((a) => {
+          const ds = (a.date ?? a.scheduledAt ?? a.scheduled_at ?? a.start_at ?? a.startsAt) as string | undefined;
+          if (!ds) return false;
+          const d = new Date(ds);
+          return d >= weekStart && d <= endDateObj;
+        });
 
         // Remove duplicatas por id dentro de cada fonte (API pode retornar o mesmo item 2x)
         const dedupeById = <T extends Record<string, unknown>>(arr: T[], idKey = "id"): T[] => {

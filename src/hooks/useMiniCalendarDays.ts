@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
+import { useClinic } from "@/contexts/ClinicContext";
 
 export interface UseMiniCalendarDaysState {
   daysWithAppointments: number[];
@@ -9,18 +10,19 @@ export interface UseMiniCalendarDaysState {
 }
 
 export function useMiniCalendarDays(): UseMiniCalendarDaysState {
+  const { clinicId } = useClinic();
   const [daysWithAppointments, setDaysWithAppointments] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
 
   const addDaysFromItems = (
-    items: { date?: string; scheduled_at?: string; start_at?: string }[],
+    items: { date?: string; scheduledAt?: string; scheduled_at?: string; start_at?: string; startAt?: string }[],
     year: number,
     month: number,
     daysSet: Set<number>
   ) => {
     for (const a of items) {
-      const dateStr = a.date ?? a.scheduled_at ?? a.start_at;
+      const dateStr = a.date ?? a.scheduledAt ?? a.scheduled_at ?? a.start_at ?? a.startAt;
       if (dateStr) {
         const d = new Date(dateStr);
         if (d.getFullYear() === year && d.getMonth() === month) {
@@ -31,6 +33,11 @@ export function useMiniCalendarDays(): UseMiniCalendarDaysState {
   };
 
   const fetchDays = useCallback(async (year: number, month: number) => {
+    if (!clinicId) {
+      setDaysWithAppointments([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -54,12 +61,17 @@ export function useMiniCalendarDays(): UseMiniCalendarDaysState {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [clinicId]);
 
   useEffect(() => {
+    if (!clinicId) {
+      setDaysWithAppointments([]);
+      setLoading(false);
+      return;
+    }
     const now = new Date();
     fetchDays(now.getFullYear(), now.getMonth());
-  }, [fetchDays]);
+  }, [clinicId, fetchDays]);
 
   return { daysWithAppointments, loading, error, refetch: fetchDays };
 }

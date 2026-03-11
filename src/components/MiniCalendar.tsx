@@ -73,7 +73,10 @@ export function MiniCalendar() {
               >
                 {day}
                 {hasAppointment && !isToday && (
-                  <span className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />
+                  <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+                )}
+                {hasAppointment && isToday && (
+                  <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-primary-foreground/80" aria-hidden="true" />
                 )}
               </button>
             );

@@ -74,7 +74,7 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
           const dateStr = (a.date ?? a.scheduledAt ?? a.scheduled_at ?? a.start_at ?? a.startsAt) as string | undefined;
           const d = dateStr ? new Date(dateStr) : new Date();
           const dayDiff = Math.floor((d.getTime() - day0) / (24 * 60 * 60 * 1000));
-          const day = Math.max(0, Math.min(4, Math.floor(dayDiff / 1)));
+          const day = Math.max(0, Math.min(6, Math.floor(dayDiff / 1)));
           const startHour = d.getHours() + d.getMinutes() / 60;
           const duration = Number(a.duration ?? a.duration_minutes ?? 60) / 60;
           const pat = a.patient as { name?: string; full_name?: string } | undefined;

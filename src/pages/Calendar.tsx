@@ -12,8 +12,8 @@ import { AddAppointmentDialog } from "@/components/calendar/AddAppointmentDialog
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 
-const HOURS = Array.from({ length: 11 }, (_, i) => i + 8);
-const WEEK_DAYS = ["Seg", "Ter", "Qua", "Qui", "Sex"];
+const HOURS = Array.from({ length: 16 }, (_, i) => i + 7);
+const WEEK_DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 const statusColors: Record<string, string> = {
   confirmed: "border-l-primary bg-primary/10",
@@ -21,11 +21,11 @@ const statusColors: Record<string, string> = {
   completed: "border-l-muted-foreground bg-muted/50",
 };
 
-function getMonday(d: Date): Date {
+function getSunday(d: Date): Date {
   const copy = new Date(d);
   const day = copy.getDay();
-  const diff = copy.getDate() - day + (day === 0 ? -6 : 1);
-  copy.setDate(diff);
+  copy.setDate(copy.getDate() - day);
+  copy.setHours(0, 0, 0, 0);
   return copy;
 }
 
@@ -33,13 +33,13 @@ const Calendar = () => {
   const { selectedClinic } = useClinic();
   const { patients } = usePatients();
   const { professionals } = useProfessionals(selectedClinic?.id);
-  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+  const [weekStart, setWeekStart] = useState(() => getSunday(new Date()));
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
   const { appointments, loading, error, refetch, createAppointment } = useCalendarAppointments();
 
   const startStr = weekStart.toISOString().slice(0, 10);
   const endDate = new Date(weekStart);
-  endDate.setDate(endDate.getDate() + 4);
+  endDate.setDate(endDate.getDate() + 6);
   const endStr = endDate.toISOString().slice(0, 10);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ const Calendar = () => {
   }, [weekStart]);
 
   const goToday = useCallback(() => {
-    setWeekStart(getMonday(new Date()));
+    setWeekStart(getSunday(new Date()));
   }, []);
 
   const handleCreateAppointment = useCallback(
@@ -71,14 +71,14 @@ const Calendar = () => {
     [createAppointment, refetch, startStr, endStr]
   );
 
-  const weekDates = Array.from({ length: 5 }, (_, i) => {
+  const weekDates = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(d.getDate() + i);
     return d.getDate();
   });
   const todayIndex = (() => {
     const today = new Date();
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart);
       d.setDate(d.getDate() + i);
       if (d.toDateString() === today.toDateString()) return i;
@@ -131,7 +131,7 @@ const Calendar = () => {
             <div>
               <h1 className="font-heading text-2xl font-bold text-foreground">Agenda</h1>
               <p className="text-sm text-muted-foreground">
-                Semana de {weekDates[0]} a {weekDates[4]} de {weekStart.toLocaleDateString("pt-BR", { month: "long" })}, {weekStart.getFullYear()}
+                Semana de {weekDates[0]} a {weekDates[6]} de {weekStart.toLocaleDateString("pt-BR", { month: "long" })}, {weekStart.getFullYear()}
               </p>
             </div>
           </div>
@@ -169,8 +169,8 @@ const Calendar = () => {
         {/* Weekly Calendar */}
         <div className="card-soft overflow-hidden animate-fade-in">
           <div className="overflow-x-auto">
-            <div className="min-w-[700px]">
-              <div className="grid grid-cols-[60px_repeat(5,1fr)] border-b border-border">
+            <div className="min-w-[800px]">
+              <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border">
                 <div className="p-3" />
                 {WEEK_DAYS.map((day, i) => (
                   <div
@@ -191,7 +191,7 @@ const Calendar = () => {
                 {HOURS.map((hour) => (
                   <div
                     key={hour}
-                    className="grid grid-cols-[60px_repeat(5,1fr)] border-b border-border/50"
+                    className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border/50"
                   >
                     <div className="p-2 text-right pr-3">
                       <span className="text-[11px] text-muted-foreground">{`${hour}:00`}</span>

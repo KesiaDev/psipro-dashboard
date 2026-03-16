@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
 import type { Patient } from "./usePatients";
+import type { AnamnesisData } from "@/types/anamnesis";
+import { parseAnamnesisFromPatient, createDefaultAnamnesis } from "@/types/anamnesis";
 
 export interface PatientWithSessions extends Patient {
   sessionsList?: Array<{
@@ -12,6 +14,7 @@ export interface PatientWithSessions extends Patient {
     type?: string;
     notes?: string;
   }>;
+  anamnesis?: AnamnesisData;
 }
 
 export interface UsePatientState {
@@ -19,6 +22,7 @@ export interface UsePatientState {
   loading: boolean;
   error: ApiError | null;
   refetch: () => Promise<void>;
+  saveAnamnesis: (data: AnamnesisData) => Promise<boolean>;
 }
 
 function mapPatient(raw: Record<string, unknown>): PatientWithSessions {
@@ -60,7 +64,12 @@ function mapPatient(raw: Record<string, unknown>): PatientWithSessions {
       })
     : undefined;
 
-  return { ...base, sessionsList: sessions };
+  const anamnesisRaw = raw.anamnesis ?? raw.anamnesis_data ?? raw.anamnesisData;
+  const anamnesis = anamnesisRaw != null
+    ? parseAnamnesisFromPatient(anamnesisRaw)
+    : createDefaultAnamnesis();
+
+  return { ...base, sessionsList: sessions, anamnesis };
 }
 
 export function usePatient(id: string | undefined): UsePatientState {
@@ -89,9 +98,23 @@ export function usePatient(id: string | undefined): UsePatientState {
     }
   }, [id]);
 
+  const saveAnamnesis = useCallback(
+    async (data: AnamnesisData): Promise<boolean> => {
+      if (!id) return false;
+      try {
+        await api.patch(`/patients/${id}`, { anamnesis: data });
+        setPatient((prev) => (prev ? { ...prev, anamnesis: data } : null));
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [id]
+  );
+
   useEffect(() => {
     fetchPatient();
   }, [fetchPatient]);
 
-  return { patient, loading, error, refetch: fetchPatient };
+  return { patient, loading, error, refetch: fetchPatient, saveAnamnesis };
 }

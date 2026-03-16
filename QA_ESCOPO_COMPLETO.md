@@ -109,6 +109,7 @@ Documento de referência para testes automatizados ou manuais. Contém tudo que 
 
 - Cabeçalho: nome, status, badge
 - Informações de contato e demográficas
+- **Anamnese** — história pessoal, queixa principal, motivo da consulta, hipótese/observação clínica, antecedentes, tratamentos, medicações, expectativas, sono/alimentação, substâncias, outras informações. Campos personalizados (botão + Adicionar). Editar/Salvar.
 - **Gráfico de evolução** (API evolution)
 - **Linha do tempo emocional**
 - **Nuvem de frequência de emoções**

@@ -10,6 +10,7 @@ import { useEmotionalEvolution } from "@/hooks/useEmotionalEvolution";
 import { EmotionTimelineChart } from "@/components/patients/EmotionTimelineChart";
 import { EmotionFrequencyCloud } from "@/components/patients/EmotionFrequencyCloud";
 import { EmotionTrendIndicators } from "@/components/patients/EmotionTrendIndicators";
+import { PatientAnamnesis } from "@/components/patients/PatientAnamnesis";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { ArrowLeft, Mail, Phone, Calendar, FileText, Clock, Sparkles, Heart, Tag, GitBranch, AlertTriangle } from "lucide-react";
@@ -71,7 +72,7 @@ const CHART_COLORS = ["hsl(42, 52%, 53%)", "hsl(158, 40%, 50%)", "hsl(210, 60%, 
 const PatientDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { patient, loading, error, refetch } = usePatient(id);
+  const { patient, loading, error, refetch, saveAnamnesis } = usePatient(id);
   const { evolution, loading: evolutionLoading } = usePatientEvolution(id);
   const { patterns, loading: patternsLoading } = usePatientPatterns(id);
   const { data: emotionalData, loading: emotionalLoading } = useEmotionalEvolution(id);
@@ -188,6 +189,14 @@ const PatientDetail = () => {
             </div>
           )}
         </div>
+
+        {/* Anamnese */}
+        {patient.anamnesis && (
+          <PatientAnamnesis
+            data={patient.anamnesis}
+            onSave={saveAnamnesis}
+          />
+        )}
 
         {/* Sessions */}
         <div className="space-y-4">

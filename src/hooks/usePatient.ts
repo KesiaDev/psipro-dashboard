@@ -22,7 +22,7 @@ export interface UsePatientState {
   loading: boolean;
   error: ApiError | null;
   refetch: () => Promise<void>;
-  saveAnamnesis: (data: AnamnesisData) => Promise<boolean>;
+  saveAnamnesis: (data: AnamnesisData) => Promise<{ ok: boolean; error?: string }>;
 }
 
 function mapPatient(raw: Record<string, unknown>): PatientWithSessions {
@@ -76,7 +76,6 @@ export function usePatient(id: string | undefined): UsePatientState {
   const [patient, setPatient] = useState<PatientWithSessions | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
-
   const fetchPatient = useCallback(async () => {
     if (!id) {
       setPatient(null);
@@ -99,14 +98,16 @@ export function usePatient(id: string | undefined): UsePatientState {
   }, [id]);
 
   const saveAnamnesis = useCallback(
-    async (data: AnamnesisData): Promise<boolean> => {
-      if (!id) return false;
+    async (data: AnamnesisData): Promise<{ ok: boolean; error?: string }> => {
+      if (!id) return { ok: false, error: "ID do paciente não encontrado" };
       try {
         await api.patch(`/patients/${id}`, { anamnesis: data });
         setPatient((prev) => (prev ? { ...prev, anamnesis: data } : null));
-        return true;
-      } catch {
-        return false;
+        return { ok: true };
+      } catch (err) {
+        const apiErr = err as ApiError;
+        const msg = apiErr?.message ?? "Erro ao salvar anamnese.";
+        return { ok: false, error: msg };
       }
     },
     [id]

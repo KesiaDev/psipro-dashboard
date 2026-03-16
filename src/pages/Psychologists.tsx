@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ProfessionalFormDialog } from "@/components/professionals/ProfessionalFormDialog";
 import { useProfessionals } from "@/hooks/useProfessionals";
+import { useProfile } from "@/hooks/useProfile";
 import type { Professional } from "@/hooks/useProfessionals";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
@@ -40,6 +41,7 @@ const statusMap = {
 const Psychologists = () => {
   const navigate = useNavigate();
   const { selectedClinic, userRole } = useClinic();
+  const { profile } = useProfile();
   const [search, setSearch] = useState("");
   const { professionals, loading, error, refetch, createProfessional, updateProfessional, deleteProfessional } = useProfessionals(selectedClinic?.id);
   const [showProfessionalDialog, setShowProfessionalDialog] = useState(false);
@@ -179,15 +181,16 @@ const Psychologists = () => {
                                 <Calendar className="h-4 w-4 mr-2" />
                                 Ver Agenda
                               </DropdownMenuItem>
-                              {userRole === "owner" && (
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() => setProfessionalToRemove(prof)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Remover
-                                </DropdownMenuItem>
-                              )}
+                              {userRole === "owner" &&
+                                profile?.email?.toLowerCase() !== prof.email?.toLowerCase() && (
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => setProfessionalToRemove(prof)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Remover
+                                  </DropdownMenuItem>
+                                )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         )}

@@ -17,7 +17,7 @@ import type { AnamnesisData, AnamnesisItem } from "@/types/anamnesis";
 
 interface Props {
   data: AnamnesisData;
-  onSave: (data: AnamnesisData) => Promise<boolean>;
+  onSave: (data: AnamnesisData) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export function PatientAnamnesis({ data, onSave }: Props) {
@@ -62,12 +62,12 @@ export function PatientAnamnesis({ data, onSave }: Props) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const ok = await onSave({ ...form, updatedAt: new Date().toISOString() });
-      if (ok) {
+      const result = await onSave({ ...form, updatedAt: new Date().toISOString() });
+      if (result.ok) {
         toast.success("Anamnese salva com sucesso");
         setEditing(false);
       } else {
-        toast.error("Erro ao salvar anamnese");
+        toast.error(result.error ?? "Erro ao salvar anamnese");
       }
     } finally {
       setSaving(false);

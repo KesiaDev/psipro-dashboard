@@ -18,8 +18,10 @@ O frontend do psipro-dashboard já possui a tela de anamnese no detalhe do pacie
    - Se o paciente não tiver anamnese, retornar `null` ou objeto vazio.
    - O frontend aceita `anamnesis`, `anamnesis_data` ou `anamnesisData`.
 
-3. **PATCH `/patients/:id`**
-   - Aceitar `anamnesis` no body do request.
+3. **PATCH `/patients/:id`** ou **PATCH `/patients/:id/anamnesis`**
+   - O frontend tenta `/patients/:id/anamnesis` primeiro; se 404, usa PATCH do paciente com `anamnesis` no body.
+   - Opção A (endpoint dedicado): `PATCH /patients/:id/anamnesis` — body = `{ items, updatedAt }` diretamente.
+   - Opção B: Aceitar `anamnesis` no body do PATCH `/patients/:id`.
    - Estrutura esperada:
    ```json
    {

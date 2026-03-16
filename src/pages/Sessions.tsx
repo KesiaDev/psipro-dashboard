@@ -45,6 +45,8 @@ const Sessions = () => {
   const { professionals } = useProfessionals(selectedClinic?.id);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [showSessionDialog, setShowSessionDialog] = useState(false);
   const { sessions, loading, error, refetch, createSession, updateSession, deleteSession } = useSessionsData();
   const [editingSession, setEditingSession] = useState<typeof sessions[0] | null>(null);
@@ -60,7 +62,13 @@ const Sessions = () => {
   const filtered = sessions.filter((s) => {
     const matchesSearch = s.patient.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === "all" || s.status === filter;
-    return matchesSearch && matchesFilter;
+    let matchesDate = true;
+    if (s.scheduled_at && (dateFrom || dateTo)) {
+      const sessionDate = s.scheduled_at.slice(0, 10); // YYYY-MM-DD
+      if (dateFrom && sessionDate < dateFrom) matchesDate = false;
+      if (dateTo && sessionDate > dateTo) matchesDate = false;
+    }
+    return matchesSearch && matchesFilter && matchesDate;
   });
 
   const grouped = filtered.reduce<Record<string, typeof filtered>>((acc, session) => {
@@ -159,18 +167,54 @@ const Sessions = () => {
         </AlertDialog>
 
         {/* Search & Filters */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1" role="search">
-            <label htmlFor="session-search" className="sr-only">Buscar sessões por paciente</label>
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="session-search"
-              placeholder="Buscar por paciente..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 rounded-xl bg-card border-border"
-              aria-label="Buscar sessões por nome do paciente"
-            />
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="relative flex-1" role="search">
+              <label htmlFor="session-search" className="sr-only">Buscar sessões por paciente</label>
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+              <Input
+                id="session-search"
+                placeholder="Buscar por paciente..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 rounded-xl bg-card border-border"
+                aria-label="Buscar sessões por nome do paciente"
+              />
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-2">
+                <label htmlFor="session-date-from" className="text-xs text-muted-foreground shrink-0">De</label>
+                <Input
+                  id="session-date-from"
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="rounded-xl bg-card border-border w-[140px]"
+                  aria-label="Filtrar sessões a partir de"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label htmlFor="session-date-to" className="text-xs text-muted-foreground shrink-0">Até</label>
+                <Input
+                  id="session-date-to"
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="rounded-xl bg-card border-border w-[140px]"
+                  aria-label="Filtrar sessões até"
+                />
+              </div>
+              {(dateFrom || dateTo) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-xl text-xs shrink-0"
+                  onClick={() => { setDateFrom(""); setDateTo(""); }}
+                >
+                  Limpar datas
+                </Button>
+              )}
+            </div>
           </div>
           <div className="flex gap-2 flex-wrap">
             {["all", "completed", "scheduled", "in-progress", "cancelled"].map((f) => (

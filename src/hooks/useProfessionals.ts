@@ -127,8 +127,10 @@ export function useProfessionals(clinicId?: string): UseProfessionalsState {
       toast.success("Profissional removido");
       await fetchProfessionals(clinicId);
       return true;
-    } catch {
-      toast.error("Erro ao remover profissional");
+    } catch (err) {
+      const apiErr = err as ApiError;
+      const msg = apiErr?.message ?? "Erro ao remover profissional";
+      toast.error(msg);
       return false;
     }
   }, [clinicId, fetchProfessionals]);

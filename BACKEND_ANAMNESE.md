@@ -32,9 +32,13 @@ A anamnese do paciente é exibida e editada na página de detalhe do paciente (`
 
 O backend deve retornar o paciente com o campo `anamnesis` (ou `anamnesis_data` / `anamnesisData`) quando existir.
 
-### PATCH `/patients/:id`
+### Opção A: PATCH `/patients/:id/anamnesis` (recomendado)
 
-O dashboard envia `anamnesis` no body ao salvar a anamnese:
+Endpoint dedicado. O dashboard envia o objeto anamnese diretamente no body (items + updatedAt).
+
+### Opção B: PATCH `/patients/:id`
+
+O dashboard tenta a Opção A primeiro; se 404, usa esta. Envia `anamnesis` no body:
 
 ```json
 {

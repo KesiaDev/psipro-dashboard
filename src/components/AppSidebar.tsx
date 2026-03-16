@@ -40,7 +40,7 @@ const mainNav = [
   { title: "Sessões", url: "/sessions", icon: MessageSquare },
   { title: "Financeiro", url: "/financials", icon: DollarSign },
   { title: "Relatórios", url: "/reports", icon: FileText },
-  { title: "Saúde do Sistema", url: "/system-health", icon: Activity, adminOnly: true },
+  { title: "System Health", url: "/system-health", icon: Activity, adminOnly: true },
 ];
 
 const bottomNav = [

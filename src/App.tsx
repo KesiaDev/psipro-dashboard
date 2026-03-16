@@ -58,6 +58,7 @@ const App = () => (
                 <Route path="/sessions/:id" element={<ProtectedRoute><ClinicGate><SessionDetail /></ClinicGate></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute><ClinicGate><Reports /></ClinicGate></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><ClinicGate><Settings /></ClinicGate></ProtectedRoute>} />
+                <Route path="/settings/integrations" element={<ProtectedRoute><ClinicGate><Settings defaultTab="integrations" /></ClinicGate></ProtectedRoute>} />
                 <Route path="/system-health" element={<ProtectedRoute><ClinicGate><AdminRoute><SystemHealth /></AdminRoute></ClinicGate></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

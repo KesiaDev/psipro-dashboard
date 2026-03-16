@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { PageContainer } from "@/components/PageContainer";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -9,8 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Camera, Bell, Shield, Clock, Smartphone, Accessibility, Palette, Check } from "lucide-react";
+import { Save, Camera, Bell, Shield, Clock, Smartphone, Accessibility, Palette, Check, Calendar, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
+import { useGoogleCalendarIntegration } from "@/hooks/useIntegrations";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTheme } from "next-themes";
 import { useThemePalette, PALETTES } from "@/contexts/ThemeContext";
@@ -62,9 +65,35 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-const Settings = () => {
+interface SettingsProps {
+  defaultTab?: string;
+}
+
+const Settings = ({ defaultTab }: SettingsProps) => {
   const { profile, loading, error, refetch, updateProfile, updatePassword } = useProfile();
   const { highContrast, enlargedFont, textSpacing, largeButtons, setHighContrast, setEnlargedFont, setTextSpacing, setLargeButtons } = useAccessibility();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const {
+    status: googleCalStatus,
+    loading: googleCalLoading,
+    getAuthUrl,
+    disconnect: disconnectGoogleCal,
+    refetch: refetchGoogleCal,
+  } = useGoogleCalendarIntegration();
+
+  useEffect(() => {
+    const status = searchParams.get("google_calendar");
+    if (status === "connected" || status === "error") {
+      refetchGoogleCal();
+      if (status === "connected") toast.success("Google Calendar conectado com sucesso!");
+      else if (status === "error") toast.error("Erro ao conectar Google Calendar. Tente novamente.");
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("google_calendar");
+        return next;
+      }, { replace: true });
+    }
+  }, [searchParams, refetchGoogleCal, setSearchParams]);
   const [profileForm, setProfileForm] = useState({ name: "", crp: "", professionalType: "", email: "", phone: "", specialties: "" });
   const [profileSaving, setProfileSaving] = useState(false);
   const [notifications, setNotifications] = useState({
@@ -143,7 +172,15 @@ const Settings = () => {
           { label: "Configurações" },
         ]}
       >
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs
+          defaultValue={
+            defaultTab ||
+            (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tab") === "integrations"
+              ? "integrations"
+              : "profile")
+          }
+          className="space-y-6"
+        >
           <TabsList className="bg-card border border-border rounded-xl p-1 h-auto">
             <TabsTrigger value="profile" className="rounded-lg data-[state=active]:bg-accent data-[state=active]:text-accent-foreground px-4 py-2 text-sm">
               Perfil
@@ -509,8 +546,55 @@ const Settings = () => {
                     <li>Se não abrir, o deeplink &quot;Abrir no app&quot; acima tenta abrir o App (se instalado).</li>
                   </ul>
                 </div>
+
+                {/* Google Calendar */}
+                <div className="flex items-center justify-between py-4 border-b border-border/50">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-primary/10">
+                      <Calendar className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Google Calendar</p>
+                      <p className="text-xs text-muted-foreground">Sincronize sua agenda com o Google Calendar</p>
+                    </div>
+                  </div>
+                  {googleCalLoading ? (
+                    <Button variant="outline-gold" size="sm" className="rounded-xl" disabled aria-label="Carregando">
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    </Button>
+                  ) : googleCalStatus?.connected ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Conectado</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                        onClick={async () => {
+                          const ok = await disconnectGoogleCal();
+                          if (ok) refetchGoogleCal();
+                        }}
+                      >
+                        Desconectar
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline-gold"
+                      size="sm"
+                      className="rounded-xl gap-2"
+                      onClick={async () => {
+                        const result = await getAuthUrl();
+                        if ("url" in result) window.location.href = result.url;
+                        else toast.error(result.error);
+                      }}
+                    >
+                      <Calendar className="h-4 w-4" />
+                      Conectar
+                    </Button>
+                  )}
+                </div>
+
                 {[
-                  { name: "Google Calendar", desc: "Sincronize sua agenda com o Google Calendar" },
                   { name: "WhatsApp Business", desc: "Envie lembretes e mensagens automatizadas" },
                   { name: "Gateway de Pagamento", desc: "Receba pagamentos online dos pacientes" },
                 ].map((item) => (

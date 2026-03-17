@@ -213,18 +213,24 @@ const SessionDetail = () => {
           />
         )}
 
-        {/* Observações - Notas da sessão (do profissional) */}
-        {displaySession.notes && (
-          <section className="space-y-4" aria-labelledby="observacoes-heading">
-            <h2 id="observacoes-heading" className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" aria-hidden="true" />
-              Observações
-            </h2>
+        {/* Observações - Notas da sessão (do profissional) - sempre visível */}
+        <section className="space-y-4" aria-labelledby="observacoes-heading">
+          <h2 id="observacoes-heading" className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" aria-hidden="true" />
+            Observações
+          </h2>
+          {displaySession.notes ? (
             <div className="card-soft p-4">
               <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{displaySession.notes}</p>
             </div>
-          </section>
-        )}
+          ) : (
+            <div className="card-soft p-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                Nenhuma nota adicionada. Clique em Editar para adicionar notas da sessão.
+              </p>
+            </div>
+          )}
+        </section>
 
         {/* Análise da IA */}
         <section className="space-y-4" aria-labelledby="ai-analysis-heading">

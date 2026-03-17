@@ -113,7 +113,7 @@ export function useSessionDetail(id: string | undefined): UseSessionDetailState 
         duration_minutes: durationMin,
         type: (data.type as string) ?? (data.session_type as string),
         status: data.status as string,
-        notes: data.notes as string,
+        notes: (data.notes ?? data.session_notes ?? data.sessionNotes ?? data.professional_notes) as string,
         scheduled_at: (data.scheduled_at as string) ?? (data.start_at as string),
         start_at: data.start_at as string,
         aiAnalysis: parseAIAnalysis(aiRaw ?? aiFromTopLevel),

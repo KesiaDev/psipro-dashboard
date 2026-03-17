@@ -199,14 +199,31 @@ const SessionDetail = () => {
               duration_minutes: sessionForEdit.duration_minutes ?? 50,
               type: sessionForEdit.type ?? "Consulta",
               status: (sessionForEdit.status as "completed" | "scheduled" | "cancelled" | "in-progress") ?? "scheduled",
-              notes: false,
+              notes: typeof (sessionForEdit as { notes?: string }).notes === "string" ? (sessionForEdit as { notes?: string }).notes : false,
               scheduled_at: "scheduled_at" in sessionForEdit ? sessionForEdit.scheduled_at : ("start_at" in sessionForEdit ? sessionForEdit.start_at : undefined),
               professional_id: sessionForEdit.professional_id,
             }}
             patients={patients}
             professionals={professionals}
-            onSave={updateSession}
+            onSave={async (id, input) => {
+              const ok = await updateSession(id, input);
+              if (ok) refetch();
+              return ok;
+            }}
           />
+        )}
+
+        {/* Observações - Notas da sessão (do profissional) */}
+        {displaySession.notes && (
+          <section className="space-y-4" aria-labelledby="observacoes-heading">
+            <h2 id="observacoes-heading" className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" aria-hidden="true" />
+              Observações
+            </h2>
+            <div className="card-soft p-4">
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{displaySession.notes}</p>
+            </div>
+          </section>
         )}
 
         {/* Análise da IA */}

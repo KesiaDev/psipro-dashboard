@@ -41,7 +41,7 @@ export function EditSessionDialog({ open, onOpenChange, session, patients, profe
       setProfessionalId(session.professional_id ?? "_empty");
       setDuration(session.duration_minutes ?? 50);
       setType(session.type || "Consulta");
-      setNotes("");
+      setNotes(typeof session.notes === "string" ? session.notes : "");
       if (session.scheduled_at) {
         const d = new Date(session.scheduled_at);
         setDateStr(d.toISOString().slice(0, 10));

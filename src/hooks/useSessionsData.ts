@@ -14,7 +14,8 @@ export interface SessionItem {
   duration_minutes?: number;
   type: string;
   status: "completed" | "scheduled" | "cancelled" | "in-progress";
-  notes: boolean;
+  /** boolean = flag da lista (tem notas); string = texto das notas (para edição) */
+  notes?: boolean | string;
   scheduled_at?: string;
   professional_id?: string;
 }

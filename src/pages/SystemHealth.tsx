@@ -27,6 +27,7 @@ import {
 import { useSystemHealth } from "@/hooks/useSystemHealth";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
+import { HealthStatusIndicator } from "@/components/HealthStatusIndicator";
 
 const CARD_CONFIG = [
   { key: "backend" as const, title: "Backend API", icon: Server },
@@ -89,23 +90,18 @@ const SystemHealth = () => {
           <Card className="card-soft border-border">
             <CardHeader className="pb-2">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-3">
                   <Activity className="h-5 w-5 text-primary" />
                   Status geral
+                  <HealthStatusIndicator status={overallStatus} loading={loading} />
                 </CardTitle>
                 <div className="flex flex-wrap items-center gap-3">
-                  {loading ? (
-                    <Badge variant="secondary" className="rounded-lg">
-                      Verificando...
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="secondary"
-                      className={`rounded-lg border ${STATUS_BADGE_STYLES[overallStatus]}`}
-                    >
-                      {STATUS_LABELS[overallStatus]}
-                    </Badge>
-                  )}
+                  <Badge
+                    variant="secondary"
+                    className={`rounded-lg border ${loading ? "" : STATUS_BADGE_STYLES[overallStatus]}`}
+                  >
+                    {loading ? "Verificando..." : STATUS_LABELS[overallStatus]}
+                  </Badge>
                   <Button
                     variant="outline"
                     size="sm"

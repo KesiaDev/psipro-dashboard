@@ -35,13 +35,15 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_KEY);
-  const clinicId = localStorage.getItem(CLINIC_ID_KEY);
+  const clinicId = localStorage.getItem(CLINIC_ID_KEY)?.trim() || "";
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  if (clinicId) {
-    config.headers["X-Clinic-Id"] = clinicId;
+  // x-clinic-id em TODAS requisições (exceção: rotas /auth/* antes de selecionar clínica)
+  config.headers["X-Clinic-Id"] = clinicId || "";
+  if (!clinicId && !config.url?.startsWith("/auth/") && import.meta.env.DEV) {
+    console.warn("[api] Requisição sem clinicId:", config.url);
   }
   if (config.data instanceof FormData) {
     delete config.headers["Content-Type"];

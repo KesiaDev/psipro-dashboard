@@ -92,10 +92,15 @@ export function useSystemHealth(): SystemHealthState {
     setError(null);
     const start = performance.now();
     try {
-      const res = await api.get<SystemHealthResponse>("/system-health");
+      let res: SystemHealthResponse;
+      try {
+        res = await api.get<SystemHealthResponse>("/health");
+      } catch {
+        res = await api.get<SystemHealthResponse>("/system-health");
+      }
       const latency = Math.round(performance.now() - start);
 
-      // Parse from flat structure
+      // Parse from flat structure (NestJS /health ou /system-health)
       const backendVal = res.backend ?? res.checks?.backend;
       const databaseVal = res.database ?? res.checks?.database;
       const webVal = res.web ?? res.checks?.web;

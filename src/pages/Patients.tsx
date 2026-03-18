@@ -22,10 +22,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Plus, Phone, Mail, MoreHorizontal, FileSpreadsheet, User, Pencil, Calendar, Trash2, RefreshCw } from "lucide-react";
+import { Search, Plus, Phone, Mail, MoreHorizontal, FileSpreadsheet, User, Pencil, Calendar, Trash2, RefreshCw, Users } from "lucide-react";
 import { usePatients } from "@/hooks/usePatients";
 import { VOICE_EVENT_FOCUS_PATIENT_SEARCH } from "@/components/VoiceCommandButton";
 import { ErrorState } from "@/components/ErrorState";
+import { EmptyState } from "@/components/EmptyState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { AddPatientDialog } from "@/components/patients/AddPatientDialog";
 import { EditPatientModal } from "@/components/patients/edit-patient-modal";
@@ -122,11 +123,11 @@ const Patients = () => {
 
   return (
     <DashboardLayout title="Pacientes">
-      <div className="space-y-6">
+      <div className="space-y-8 p-1">
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground">Pacientes</h1>
+          <div className="space-y-1">
+            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Pacientes</h1>
             <p className="text-sm text-muted-foreground">{patients.length} pacientes cadastrados</p>
           </div>
           <div className="flex items-center gap-2">
@@ -282,7 +283,7 @@ const Patients = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>Excluir paciente</AlertDialogTitle>
               <AlertDialogDescription>
-                Tem certeza que deseja excluir <strong>{patientToDelete?.name}</strong>? Esta ação não pode ser desfeita.
+                Tem certeza que deseja excluir <strong>{patientToDelete?.name}</strong>? Esta ação é irreversível e remove todos os dados do paciente em conformidade com a LGPD.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -356,8 +357,22 @@ const Patients = () => {
         {/* Patient List */}
         <div className="grid gap-3">
           {filtered.length === 0 ? (
-            <div className="card-soft p-12 text-center">
-              <p className="text-muted-foreground">Nenhum paciente encontrado.</p>
+            <div className="card-soft p-8 md:p-12">
+              {patients.length === 0 ? (
+                <EmptyState
+                  icon={Users}
+                  title="Nenhum paciente cadastrado"
+                  description="Adicione seu primeiro paciente para começar a gerenciar seu atendimento."
+                  actionLabel="Novo Paciente"
+                  onAction={() => setShowAddDialog(true)}
+                />
+              ) : (
+                <EmptyState
+                  icon={Search}
+                  title="Nenhum paciente encontrado"
+                  description="Tente ajustar a busca ou os filtros para encontrar o paciente."
+                />
+              )}
             </div>
           ) : (
             filtered.map((patient, i) => (
@@ -443,12 +458,26 @@ const Patients = () => {
                   </div>
                 </div>
 
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-xl text-muted-foreground hover:text-destructive shrink-0 h-9 w-9"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPatientToDelete({ id: patient.id, name: patient.full_name ?? patient.name ?? "—" });
+                    }}
+                    aria-label={`Excluir paciente ${patient.full_name ?? patient.name ?? "—"}`}
+                    title="Excluir paciente (LGPD)"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="rounded-xl text-muted-foreground hover:text-foreground shrink-0"
+                      className="rounded-xl text-muted-foreground hover:text-foreground shrink-0 h-9 w-9"
                       aria-label={`Menu de opções do paciente ${patient.full_name ?? patient.name ?? "—"}`}
                     >
                       <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -476,6 +505,7 @@ const Patients = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </div>
               </div>
             ))
           )}

@@ -53,13 +53,13 @@ const Index = () => {
 
   return (
     <DashboardLayout title="Dashboard">
-      <div className="space-y-6">
+      <div className="space-y-8 p-1">
         {/* Greeting - dados da API */}
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">
+        <div className="space-y-1">
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
             Dashboard
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Você tem {appointmentsToday} consulta{appointmentsToday !== 1 ? "s" : ""} agendada{appointmentsToday !== 1 ? "s" : ""} para hoje.
           </p>
         </div>

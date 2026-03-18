@@ -28,6 +28,7 @@ import Financials from "./pages/Financials";
 import SystemHealth from "./pages/SystemHealth";
 import NotFound from "./pages/NotFound";
 import { AdminRoute } from "./components/AdminRoute";
+import { Auth401Redirect } from "./components/Auth401Redirect";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <ClinicProvider>
+              <Auth401Redirect />
               <Toaster />
               <Sonner />
               <Routes>

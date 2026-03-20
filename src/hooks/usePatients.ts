@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
 import { toast } from "sonner";
 import { useClinic } from "@/contexts/ClinicContext";
+import type { AnamnesisData, AnamnesisItem } from "@/types/anamnesis";
 
 export interface Patient {
   id: string;
@@ -25,6 +26,22 @@ export interface Patient {
   progress?: "improving" | "stable" | "attention";
 }
 
+/** Campos de ficha de acolhimento / anamnese inicial */
+export interface PatientIntakeData {
+  main_complaint?: string | null;
+  reason_consultation?: string | null;
+  previous_diseases?: string | null;
+  medications?: string | null;
+  allergies?: string | null;
+  family_history?: string | null;
+  diet?: string | null;
+  physical_activity?: string | null;
+  smoking?: string | null;
+  alcohol?: string | null;
+  exams_done?: string | null;
+  exam_results?: string | null;
+}
+
 export interface CreatePatientInput {
   full_name: string;
   email?: string | null;
@@ -33,6 +50,9 @@ export interface CreatePatientInput {
   cpf?: string | null;
   notes?: string | null;
   status?: "active" | "inactive" | "new";
+  gender?: string | null;
+  profession?: string | null;
+  intake?: PatientIntakeData;
 }
 
 export interface UsePatientsState {
@@ -108,6 +128,26 @@ export function usePatients(): UsePatientsState {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [clinicId, fetchPatients]);
 
+  const buildAnamnesisFromIntake = useCallback((intake: PatientIntakeData | undefined): AnamnesisData | null => {
+    if (!intake || Object.values(intake).every((v) => !v || !String(v).trim())) return null;
+    const items: AnamnesisItem[] = [
+      { key: "queixa_principal", label: "Queixa principal", value: intake.main_complaint?.trim() ?? "" },
+      { key: "motivo_consulta", label: "Motivo da consulta", value: intake.reason_consultation?.trim() ?? "" },
+      { key: "doencas_previas", label: "Doenças prévias (cirurgias, doenças crônicas)", value: intake.previous_diseases?.trim() ?? "" },
+      { key: "uso_medicacoes", label: "Medicações em uso", value: intake.medications?.trim() ?? "" },
+      { key: "alergias", label: "Alergias", value: intake.allergies?.trim() ?? "" },
+      { key: "antecedentes_familiares", label: "Antecedentes familiares", value: intake.family_history?.trim() ?? "" },
+      { key: "alimentacao", label: "Alimentação", value: intake.diet?.trim() ?? "" },
+      { key: "atividade_fisica", label: "Atividade física", value: intake.physical_activity?.trim() ?? "" },
+      { key: "tabagismo", label: "Tabagismo", value: intake.smoking?.trim() ?? "" },
+      { key: "consumo_alcool", label: "Consumo de álcool", value: intake.alcohol?.trim() ?? "" },
+      { key: "exames_realizados", label: "Exames já realizados", value: intake.exams_done?.trim() ?? "" },
+      { key: "resultados_exames", label: "Resultados de exames", value: intake.exam_results?.trim() ?? "" },
+    ].filter((i) => i.value);
+    if (items.length === 0) return null;
+    return { items, updatedAt: new Date().toISOString() };
+  }, []);
+
   const createPatient = useCallback(async (input: CreatePatientInput): Promise<Patient | null> => {
     const name = (input.full_name ?? "").trim();
     if (!name) {
@@ -132,17 +172,28 @@ export function usePatients(): UsePatientsState {
       if (trimmedCpf) payload.cpf = trimmedCpf;
       const trimmedNotes = input.notes?.trim();
       if (trimmedNotes) payload.observations = trimmedNotes;
+      if (input.gender?.trim()) payload.gender = input.gender.trim();
+      if (input.profession?.trim()) payload.profession = input.profession.trim();
       const res = await api.post<Patient | Record<string, unknown>>("/patients", payload);
+      const patient = mapPatient((res as Record<string, unknown>) ?? {});
+      const anamnesis = buildAnamnesisFromIntake(input.intake);
+      if (anamnesis && patient.id) {
+        try {
+          await api.patch(`/patients/${patient.id}`, { anamnesis });
+        } catch {
+          // Anamnese opcional; paciente já foi criado
+        }
+      }
       toast.success("Paciente criado com sucesso");
       await fetchPatients();
-      return mapPatient((res as Record<string, unknown>) ?? {});
+      return patient;
     } catch (err) {
       const apiErr = err as ApiError;
       const msg = apiErr.message ?? "Erro ao criar paciente";
       toast.error(msg);
       throw err; // Propaga para o modal exibir a mensagem real
     }
-  }, [fetchPatients]);
+  }, [fetchPatients, buildAnamnesisFromIntake]);
 
   const getDeleteErrorMessage = (err: ApiError): string => {
     if (err.status === 404) {

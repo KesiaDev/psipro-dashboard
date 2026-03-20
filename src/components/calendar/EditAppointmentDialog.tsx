@@ -75,40 +75,40 @@ export function EditAppointmentDialog({ open, onOpenChange, appointment, onUpdat
             <p className="font-medium text-foreground">{appointment.patient}</p>
             <p className="text-sm text-muted-foreground">{appointment.type || "Consulta"}</p>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2 min-w-0">
               <Label htmlFor="edit-apt-date">Nova data</Label>
               <Input
                 id="edit-apt-date"
                 type="date"
                 value={dateStr}
                 onChange={(e) => setDateStr(e.target.value)}
-                className="rounded-xl"
+                className="rounded-xl w-full"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label htmlFor="edit-apt-time">Nova hora</Label>
               <Input
                 id="edit-apt-time"
                 type="time"
                 value={timeStr}
                 onChange={(e) => setTimeStr(e.target.value)}
-                className="rounded-xl"
+                className="rounded-xl w-full"
               />
             </div>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
-        <DialogFooter className="gap-2 pt-2 flex-col sm:flex-row">
+        <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 pt-4">
           <Button
             variant="destructive"
-            className="rounded-xl order-2 sm:order-1"
+            className="rounded-xl w-full sm:w-auto"
             onClick={handleCancel}
             disabled={saving || cancelling}
           >
             {cancelling ? "Cancelando..." : "Cancelar agendamento"}
           </Button>
-          <div className="flex gap-2 order-1 sm:order-2">
+          <div className="flex gap-2 w-full sm:w-auto justify-end">
             <Button variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>
               Fechar
             </Button>

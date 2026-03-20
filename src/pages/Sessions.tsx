@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useSessionsData } from "@/hooks/useSessionsData";
+import { useFinancialRecords } from "@/hooks/useFinancialRecords";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { VOICE_EVENT_OPEN_NEW_SESSION } from "@/components/VoiceCommandButton";
@@ -49,6 +50,7 @@ const Sessions = () => {
   const [dateTo, setDateTo] = useState<string>("");
   const [showSessionDialog, setShowSessionDialog] = useState(false);
   const { sessions, loading, error, refetch, createSession, updateSession, deleteSession } = useSessionsData();
+  const { addRecord } = useFinancialRecords();
   const [editingSession, setEditingSession] = useState<typeof sessions[0] | null>(null);
   const [deletingSession, setDeletingSession] = useState<typeof sessions[0] | null>(null);
   const [deletingInProgress, setDeletingInProgress] = useState(false);
@@ -123,7 +125,30 @@ const Sessions = () => {
           onOpenChange={setShowSessionDialog}
           patients={patients}
           professionals={professionals}
-          onSave={createSession}
+          onSave={async (input) => {
+            const result = await createSession(input);
+            if (result.ok && result.session) {
+              const patient = patients.find((p) => p.id === result.session!.patient_id);
+              const patientName = patient?.full_name ?? patient?.name ?? result.session.patient_name ?? "Paciente";
+              const dateStr = input.scheduled_at
+                ? new Date(input.scheduled_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+                : "";
+              try {
+                await addRecord({
+                  type: "income",
+                  category: "session",
+                  description: `Sessão - ${patientName} - ${dateStr}`,
+                  amount: 0,
+                  status: "pending",
+                  patient_id: result.session.patient_id ?? null,
+                  session_id: String(result.session.id),
+                });
+              } catch {
+                // Registro financeiro opcional; sessão já foi criada
+              }
+            }
+            return result.ok;
+          }}
         />
 
         <EditSessionDialog

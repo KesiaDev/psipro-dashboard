@@ -25,12 +25,18 @@ export interface CreateAppointmentInput {
   status?: string;
 }
 
+export interface CreatedAppointment {
+  id: string | number;
+  patient_id?: string;
+  patient_name?: string;
+}
+
 export interface UseCalendarAppointmentsState {
   appointments: CalendarAppointment[];
   loading: boolean;
   error: ApiError | null;
   refetch: (startDate?: string, endDate?: string) => Promise<void>;
-  createAppointment: (input: CreateAppointmentInput) => Promise<boolean>;
+  createAppointment: (input: CreateAppointmentInput) => Promise<{ ok: boolean; appointment?: CreatedAppointment }>;
 }
 
 function getInitials(name: string): string {
@@ -176,10 +182,10 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
   );
 
   const createAppointment = useCallback(
-    async (input: CreateAppointmentInput): Promise<boolean> => {
+    async (input: CreateAppointmentInput): Promise<{ ok: boolean; appointment?: CreatedAppointment }> => {
       if (!clinicId) {
         toast.error("Selecione uma clínica para criar agendamentos.");
-        return false;
+        return { ok: false };
       }
       try {
         const payload: Record<string, unknown> = {
@@ -188,17 +194,24 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
           clinicId,
         };
         if (input.professional_id != null) payload.professionalId = input.professional_id;
-        // Backend DTO não aceita durationMinutes na criação; usar default no servidor
         if (input.type != null) payload.type = input.type;
         if (input.status != null) payload.status = input.status;
-        await api.post("/appointments", payload);
+        const res = await api.post<Record<string, unknown>>("/appointments", payload);
+        const data = (res?.appointment ?? res?.data ?? res) as Record<string, unknown> | undefined;
+        const appointment: CreatedAppointment | undefined = data
+          ? {
+              id: data.id ?? "",
+              patient_id: data.patient_id != null ? String(data.patient_id) : (data.patientId as string),
+              patient_name: (data.patient_name as string) ?? ((data.patient as { name?: string })?.name),
+            }
+          : undefined;
         toast.success("Agendamento criado com sucesso");
         await fetchAppointments();
-        return true;
+        return { ok: true, appointment };
       } catch (err) {
         const apiErr = err as ApiError;
         toast.error(apiErr?.message ?? "Erro ao criar agendamento");
-        return false;
+        return { ok: false };
       }
     },
     [clinicId, fetchAppointments]

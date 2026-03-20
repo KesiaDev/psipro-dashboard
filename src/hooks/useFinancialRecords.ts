@@ -6,6 +6,7 @@ export interface FinancialRecord {
   id: string;
   user_id?: string;
   patient_id: string | null;
+  session_id?: string | null;
   type: "income" | "expense";
   category: string;
   description: string;
@@ -21,6 +22,7 @@ export interface FinancialRecord {
 
 export interface FinancialRecordInput {
   patient_id?: string | null;
+  session_id?: string | null;
   type: "income" | "expense";
   category: string;
   description: string;
@@ -52,6 +54,7 @@ function mapRecord(raw: Record<string, unknown>): FinancialRecord {
   return {
     id: String(raw.id ?? ""),
     patient_id: raw.patient_id != null ? String(raw.patient_id) : null,
+    session_id: raw.session_id != null ? String(raw.session_id) : null,
     type: ((raw.type as string) ?? "income") as "income" | "expense",
     category: (raw.category as string) ?? "",
     description: (raw.description as string) ?? "",

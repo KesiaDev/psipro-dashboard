@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus, Clock } from "lucide-react";
 import { useCalendarAppointments } from "@/hooks/useCalendarAppointments";
+import { useFinancialRecords } from "@/hooks/useFinancialRecords";
 import { usePatients } from "@/hooks/usePatients";
 import { useProfessionals } from "@/hooks/useProfessionals";
 import { useClinic } from "@/contexts/ClinicContext";
@@ -36,6 +37,7 @@ const Calendar = () => {
   const [weekStart, setWeekStart] = useState(() => getSunday(new Date()));
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
   const { appointments, loading, error, refetch, createAppointment } = useCalendarAppointments();
+  const { addRecord } = useFinancialRecords();
 
   const startStr = weekStart.toISOString().slice(0, 10);
   const endDate = new Date(weekStart);
@@ -64,11 +66,31 @@ const Calendar = () => {
 
   const handleCreateAppointment = useCallback(
     async (input: Parameters<typeof createAppointment>[0]) => {
-      const ok = await createAppointment(input);
-      if (ok) refetch(startStr, endStr);
-      return ok;
+      const result = await createAppointment(input);
+      if (result.ok && result.appointment) {
+        const patient = patients.find((p) => p.id === result.appointment!.patient_id);
+        const patientName = patient?.full_name ?? patient?.name ?? result.appointment.patient_name ?? "Paciente";
+        const dateStr = input.scheduled_at
+          ? new Date(input.scheduled_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+          : "";
+        try {
+          await addRecord({
+            type: "income",
+            category: "session",
+            description: `Agendamento - ${patientName} - ${dateStr}`,
+            amount: 0,
+            status: "pending",
+            patient_id: result.appointment.patient_id ?? null,
+            session_id: String(result.appointment.id),
+          });
+        } catch {
+          // Registro financeiro opcional
+        }
+      }
+      if (result.ok) refetch(startStr, endStr);
+      return result.ok;
     },
-    [createAppointment, refetch, startStr, endStr]
+    [createAppointment, addRecord, patients, refetch, startStr, endStr]
   );
 
   const weekDates = Array.from({ length: 7 }, (_, i) => {

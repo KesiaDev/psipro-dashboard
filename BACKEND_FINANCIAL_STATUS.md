@@ -35,3 +35,25 @@ O backend pode estar:
 ## Verificar
 
 No controller/service de `financial/records`, conferir se o DTO aceita `status` e se o valor é persistido sem ser sobrescrito.
+
+---
+
+## Criação automática ao registrar sessão
+
+Ao criar uma sessão ou agendamento, o frontend cria automaticamente um registro financeiro **pendente**:
+
+```json
+{
+  "type": "income",
+  "category": "session",
+  "description": "Sessão - Nome do Paciente - 21/03/2026",
+  "amount": 0,
+  "status": "pending",
+  "patient_id": "uuid-do-paciente",
+  "session_id": "uuid-da-sessao"
+}
+```
+
+O backend deve:
+- Aceitar `amount: 0` para registros pendentes (o terapeuta preenche o valor depois)
+- Aceitar e persistir `session_id` (vínculo sessão ↔ cobrança)

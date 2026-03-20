@@ -4,14 +4,16 @@ import { useClinic } from "@/contexts/ClinicContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Receipt, CreditCard, Wallet, Trash2, CheckCircle, Clock } from "lucide-react";
+import { DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Receipt, CreditCard, Wallet, Trash2, CheckCircle, Clock, Pencil } from "lucide-react";
 import { useFinancialRecords } from "@/hooks/useFinancialRecords";
 import { usePatients } from "@/hooks/usePatients";
 import { AddFinancialRecordDialog } from "@/components/financials/AddFinancialRecordDialog";
+import { EditFinancialRecordDialog } from "@/components/financials/EditFinancialRecordDialog";
 import { ErrorState } from "@/components/ErrorState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useState } from "react";
 
 const statusColors = {
   paid: "confirmed" as const,
@@ -47,6 +49,7 @@ const Financials = () => {
   const { selectedClinic, userRole } = useClinic();
   const { records, loading, error, addRecord, updateRecord, deleteRecord, stats, refetch } = useFinancialRecords();
   const { patients } = usePatients();
+  const [editingRecord, setEditingRecord] = useState<(typeof records)[0] | null>(null);
 
   if (error) {
     const err = error as { status?: number; message?: string };
@@ -174,7 +177,16 @@ const Financials = () => {
                         </td>
                         <td className="py-3">
                           <div className="flex items-center gap-1">
-                            {r.status === "pending" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground"
+                              title="Editar valor e pagamento"
+                              onClick={() => setEditingRecord(r)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            {r.status === "pending" && r.amount > 0 && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -215,6 +227,15 @@ const Financials = () => {
             )}
           </CardContent>
         </Card>
+        <EditFinancialRecordDialog
+          open={!!editingRecord}
+          onOpenChange={(open) => !open && setEditingRecord(null)}
+          record={editingRecord}
+          onSave={async (id, input) => {
+            await updateRecord(id, input);
+            setEditingRecord(null);
+          }}
+        />
       </PageContainer>
     </DashboardLayout>
   );

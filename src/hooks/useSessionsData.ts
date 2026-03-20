@@ -41,12 +41,19 @@ export interface CreateSessionInput {
   clinical?: SessionClinicalData;
 }
 
+/** Dados da sessão criada (retornados pela API) */
+export interface CreatedSession {
+  id: string | number;
+  patient_id?: string;
+  patient_name?: string;
+}
+
 export interface UseSessionsDataState {
   sessions: SessionItem[];
   loading: boolean;
   error: ApiError | null;
   refetch: () => Promise<void>;
-  createSession: (input: CreateSessionInput) => Promise<boolean>;
+  createSession: (input: CreateSessionInput) => Promise<{ ok: boolean; session?: CreatedSession }>;
   updateSession: (id: string | number, input: CreateSessionInput) => Promise<boolean>;
   deleteSession: (id: string | number) => Promise<boolean>;
 }
@@ -134,7 +141,7 @@ export function useSessionsData(): UseSessionsDataState {
   }, [clinicId, fetchSessions]);
 
   const createSession = useCallback(
-    async (input: CreateSessionInput): Promise<boolean> => {
+    async (input: CreateSessionInput): Promise<{ ok: boolean; session?: CreatedSession }> => {
       try {
         // Backend NestJS espera camelCase (como em appointments)
         // Backend aceita apenas: patientId, date, professionalId, notes
@@ -144,16 +151,23 @@ export function useSessionsData(): UseSessionsDataState {
         };
         if (input.professional_id) payload.professionalId = input.professional_id;
         if (input.notes) payload.notes = input.notes;
-        // duration e type não são aceitos pelo DTO de criação
         // clinicId vai no header X-Clinic-Id, não no body
-        await api.post("/sessions", payload);
+        const res = await api.post<Record<string, unknown>>("/sessions", payload);
+        const data = (res?.session ?? res?.data ?? res) as Record<string, unknown> | undefined;
+        const session: CreatedSession | undefined = data
+          ? {
+              id: data.id ?? "",
+              patient_id: data.patient_id != null ? String(data.patient_id) : (data.patientId as string),
+              patient_name: (data.patient_name as string) ?? ((data.patient as { name?: string })?.name),
+            }
+          : undefined;
         toast.success("Sessão criada com sucesso");
         await fetchSessions();
-        return true;
+        return { ok: true, session };
       } catch (err) {
         const apiErr = err as ApiError;
         toast.error(apiErr?.message ?? "Erro ao criar sessão");
-        return false;
+        return { ok: false };
       }
     },
     [clinicId, fetchSessions]

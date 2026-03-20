@@ -176,6 +176,7 @@ export function useSessionsData(): UseSessionsDataState {
   const updateSession = useCallback(
     async (id: string | number, input: CreateSessionInput): Promise<boolean> => {
       try {
+        // Backend DTO aceita apenas: patientId, date, professionalId, duration, notes
         const payload: Record<string, unknown> = {
           patientId: input.patient_id,
           date: input.scheduled_at,
@@ -183,10 +184,7 @@ export function useSessionsData(): UseSessionsDataState {
         if (input.professional_id) payload.professionalId = input.professional_id;
         if (input.duration_minutes != null) payload.duration = input.duration_minutes;
         if (input.notes) payload.notes = input.notes;
-        if (input.type) payload.type = input.type;
-        if (input.clinical && Object.keys(input.clinical).length > 0) {
-          payload.clinical = input.clinical;
-        }
+        // type e clinical não são aceitos pelo backend — remover do payload para evitar 400
         await api.patch(`/sessions/${id}`, payload);
         toast.success("Sessão atualizada");
         await fetchSessions();

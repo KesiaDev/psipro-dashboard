@@ -10,6 +10,7 @@ import { usePatients } from "@/hooks/usePatients";
 import { useProfessionals } from "@/hooks/useProfessionals";
 import { useClinic } from "@/contexts/ClinicContext";
 import { AddAppointmentDialog } from "@/components/calendar/AddAppointmentDialog";
+import { EditAppointmentDialog } from "@/components/calendar/EditAppointmentDialog";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 
@@ -36,7 +37,9 @@ const Calendar = () => {
   const { professionals } = useProfessionals(selectedClinic?.id);
   const [weekStart, setWeekStart] = useState(() => getSunday(new Date()));
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
-  const { appointments, loading, error, refetch, createAppointment } = useCalendarAppointments();
+  const [editingAppointment, setEditingAppointment] = useState<(typeof appointments)[0] | null>(null);
+  const { appointments, loading, error, refetch, createAppointment, updateAppointment, deleteAppointment } =
+    useCalendarAppointments();
   const { addRecord } = useFinancialRecords();
 
   const startStr = weekStart.toISOString().slice(0, 10);
@@ -188,6 +191,22 @@ const Calendar = () => {
           onSave={handleCreateAppointment}
         />
 
+        <EditAppointmentDialog
+          open={!!editingAppointment}
+          onOpenChange={(open) => !open && setEditingAppointment(null)}
+          appointment={editingAppointment}
+          onUpdate={async (apt, scheduled_at) => {
+            const ok = await updateAppointment(apt, scheduled_at);
+            if (ok) refetch(startStr, endStr);
+            return ok;
+          }}
+          onCancel={async (apt) => {
+            const ok = await deleteAppointment(apt);
+            if (ok) refetch(startStr, endStr);
+            return ok;
+          }}
+        />
+
         {/* Weekly Calendar */}
         <div className="card-soft overflow-hidden animate-fade-in">
           <div className="overflow-x-auto">
@@ -237,7 +256,17 @@ const Calendar = () => {
                             {dayEvents.map((event) => (
                               <div
                                 key={event.id}
-                                className={`min-h-[26px] rounded-lg border-l-[3px] px-2 py-1 cursor-pointer hover:shadow-md transition-shadow overflow-hidden min-w-0 ${statusColors[event.status] ?? statusColors.pending}`}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => setEditingAppointment(event)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    setEditingAppointment(event);
+                                  }
+                                }}
+                                className={`min-h-[26px] rounded-lg border-l-[3px] px-2 py-1 cursor-pointer hover:shadow-md transition-shadow overflow-hidden min-w-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card ${statusColors[event.status] ?? statusColors.pending}`}
+                                aria-label={`${event.patient}, ${event.type}. Clique para editar ou cancelar`}
                               >
                                 <p className="text-xs font-semibold text-foreground truncate leading-tight">
                                   {event.patient}

@@ -163,6 +163,8 @@ Este documento consolida tudo que o **backend PsiPro** precisa implementar ou aj
 | GET | `/appointments?start=&end=` | Agenda |
 | GET | `/appointments/today` | Consultas de hoje |
 | POST | `/appointments` | Novo agendamento |
+| PATCH | `/appointments/:id` | Alterar data/hora |
+| DELETE | `/appointments/:id` | Cancelar agendamento |
 | GET | `/sessions` | Lista de sessões |
 | POST | `/sessions` | Nova sessão |
 | GET | `/financial/records` | Registros financeiros |
@@ -177,6 +179,7 @@ Este documento consolida tudo que o **backend PsiPro** precisa implementar ou aj
 - [ ] **Sessões:** Implementar `GET /sessions/:id`; aceitar `type` e `clinical` no PATCH; implementar `DELETE /sessions/:id`
 - [ ] **Financeiro:** Respeitar `status`; aceitar `amount: 0` e `session_id`
 - [ ] **Pacientes:** Implementar `DELETE /patients/:id` (se ainda não existir)
+- [ ] **Agenda:** Implementar `PATCH /appointments/:id` e `DELETE /appointments/:id` (editar/cancelar na agenda)
 
 ---
 

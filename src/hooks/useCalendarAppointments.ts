@@ -5,7 +5,10 @@ import { useClinic } from "@/contexts/ClinicContext";
 
 export interface CalendarAppointment {
   id: string | number;
+  rawId: string | number;
+  source: "appointment" | "session";
   patient: string;
+  patient_id?: string;
   initials?: string;
   type: string;
   day: number;
@@ -13,6 +16,7 @@ export interface CalendarAppointment {
   duration: number;
   status: "confirmed" | "pending" | "completed";
   date?: string;
+  professional_id?: string;
 }
 
 export interface CreateAppointmentInput {
@@ -37,6 +41,8 @@ export interface UseCalendarAppointmentsState {
   error: ApiError | null;
   refetch: (startDate?: string, endDate?: string) => Promise<void>;
   createAppointment: (input: CreateAppointmentInput) => Promise<{ ok: boolean; appointment?: CreatedAppointment }>;
+  updateAppointment: (apt: CalendarAppointment, scheduled_at: string) => Promise<boolean>;
+  deleteAppointment: (apt: CalendarAppointment) => Promise<boolean>;
 }
 
 function getInitials(name: string): string {
@@ -92,9 +98,13 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
             : rawStatus === "agendada" || rawStatus === "scheduled" || rawStatus === "em andamento" || rawStatus === "in-progress" ? "confirmed"
             : rawStatus === "confirmed" ? "confirmed"
             : "pending";
+          const rawId = a.id ?? "";
           return {
-            id: `${prefix}-${a.id ?? ""}`,
+            id: `${prefix}-${rawId}`,
+            rawId,
+            source: prefix === "sess" ? "session" : "appointment",
             patient: patientName,
+            patient_id: a.patient_id != null ? String(a.patient_id) : (a.patient as { id?: string })?.id,
             initials: getInitials(patientName),
             type: (a.type as string) ?? (a.session_type as string) ?? "",
             day,
@@ -102,6 +112,7 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
             duration,
             status,
             date: dateStr as string,
+            professional_id: a.professional_id != null ? String(a.professional_id) : undefined,
           };
         };
 
@@ -217,5 +228,51 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
     [clinicId, fetchAppointments]
   );
 
-  return { appointments, loading, error, refetch: fetchAppointments, createAppointment };
+  const updateAppointment = useCallback(
+    async (apt: CalendarAppointment, scheduled_at: string): Promise<boolean> => {
+      try {
+        if (apt.source === "session") {
+          await api.patch(`/sessions/${apt.rawId}`, {
+            patientId: apt.patient_id,
+            date: scheduled_at,
+            professionalId: apt.professional_id,
+          });
+        } else {
+          await api.patch(`/appointments/${apt.rawId}`, {
+            scheduledAt: scheduled_at,
+            patientId: apt.patient_id,
+            professionalId: apt.professional_id,
+          });
+        }
+        toast.success("Agendamento alterado");
+        await fetchAppointments();
+        return true;
+      } catch (err) {
+        toast.error((err as ApiError)?.message ?? "Erro ao alterar agendamento");
+        return false;
+      }
+    },
+    [fetchAppointments]
+  );
+
+  const deleteAppointment = useCallback(
+    async (apt: CalendarAppointment): Promise<boolean> => {
+      try {
+        if (apt.source === "session") {
+          await api.delete(`/sessions/${apt.rawId}`);
+        } else {
+          await api.delete(`/appointments/${apt.rawId}`);
+        }
+        toast.success("Agendamento cancelado");
+        await fetchAppointments();
+        return true;
+      } catch (err) {
+        toast.error((err as ApiError)?.message ?? "Erro ao cancelar");
+        return false;
+      }
+    },
+    [fetchAppointments]
+  );
+
+  return { appointments, loading, error, refetch: fetchAppointments, createAppointment, updateAppointment, deleteAppointment };
 }

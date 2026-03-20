@@ -56,6 +56,13 @@ GET /api/sessions/:id
   "session_type": "Consulta",
   "status": "realizada",
   "notes": "Notas da sessão...",
+  "clinical": {
+    "emotional_state": 7,
+    "evolution_notes": "Paciente demonstrou melhora...",
+    "interventions": "TCC, reestruturação cognitiva",
+    "homework": "Registro de pensamentos automáticos",
+    "risk_status": "normal"
+  },
   "aiAnalysis": {
     "summary": "Resumo da sessão...",
     "themes": ["Tema 1", "Tema 2"],
@@ -94,3 +101,22 @@ O frontend aceita variações de nomes de campos (camelCase ou snake_case).
 - [ ] Incluir `patient_name` ou `patient.name` no response
 - [ ] Incluir `start_at`, `scheduled_at` ou `date` para data/hora
 - [ ] (Opcional) Incluir `aiAnalysis` se houver análise de IA
+- [ ] (Opcional) Incluir `clinical` com: `emotional_state` (1-10), `evolution_notes`, `interventions`, `homework`, `risk_status` (normal/low/medium/high)
+
+### PATCH /sessions/:id — Campos clínicos
+
+O frontend envia `clinical` no body ao editar sessão:
+
+```json
+{
+  "clinical": {
+    "emotional_state": 7,
+    "evolution_notes": "Evolução do paciente...",
+    "interventions": "Técnicas utilizadas...",
+    "homework": "Tarefas de casa...",
+    "risk_status": "normal"
+  }
+}
+```
+
+O backend deve persistir e retornar `clinical` no GET.

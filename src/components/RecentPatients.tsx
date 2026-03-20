@@ -11,6 +11,7 @@ interface RecentPatientsProps {
 }
 
 const progressStyles: Record<string, { label: string; dot: string }> = {
+  _undefined: { label: "Não definido", dot: "bg-muted" },
   improving: { label: "Evoluindo", dot: "bg-primary" },
   stable: { label: "Estável", dot: "bg-chart-amber" },
   attention: { label: "Atenção", dot: "bg-destructive" },
@@ -78,8 +79,8 @@ export function RecentPatients({ patients, loading, error }: RecentPatientsProps
                 <p className="text-xs text-muted-foreground">{p.sessions} sessões · {p.lastSession}</p>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className={`h-2 w-2 rounded-full ${progressStyles[p.progress]?.dot ?? progressStyles.stable.dot}`} />
-                <span className="text-xs text-muted-foreground">{progressStyles[p.progress]?.label ?? "Estável"}</span>
+                <span className={`h-2 w-2 rounded-full ${progressStyles[p.progress ?? "_undefined"]?.dot ?? progressStyles._undefined.dot}`} />
+                <span className="text-xs text-muted-foreground">{progressStyles[p.progress ?? "_undefined"]?.label ?? "Não definido"}</span>
               </div>
             </li>
           ))}

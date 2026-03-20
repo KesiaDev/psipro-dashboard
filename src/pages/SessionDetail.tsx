@@ -19,6 +19,10 @@ import {
   User,
   Volume2,
   Pencil,
+  Activity,
+  Target,
+  ClipboardList,
+  ShieldAlert,
 } from "lucide-react";
 import { useClinic } from "@/contexts/ClinicContext";
 import { usePatients } from "@/hooks/usePatients";
@@ -202,6 +206,7 @@ const SessionDetail = () => {
               notes: typeof (sessionForEdit as { notes?: string }).notes === "string" ? (sessionForEdit as { notes?: string }).notes : false,
               scheduled_at: "scheduled_at" in sessionForEdit ? sessionForEdit.scheduled_at : ("start_at" in sessionForEdit ? sessionForEdit.start_at : undefined),
               professional_id: sessionForEdit.professional_id,
+              clinical: "clinical" in sessionForEdit ? sessionForEdit.clinical : undefined,
             }}
             patients={patients}
             professionals={professionals}
@@ -227,6 +232,100 @@ const SessionDetail = () => {
             <div className="card-soft p-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Nenhuma nota adicionada. Clique em Editar para adicionar notas da sessão.
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* Prontuário clínico */}
+        <section className="space-y-4" aria-labelledby="clinical-heading">
+          <h2 id="clinical-heading" className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
+            <Activity className="h-5 w-5 text-primary" aria-hidden="true" />
+            Prontuário clínico
+          </h2>
+          {displaySession.clinical && (displaySession.clinical.emotional_state != null || displaySession.clinical.evolution_notes || displaySession.clinical.interventions || displaySession.clinical.homework || displaySession.clinical.risk_status) ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {displaySession.clinical.emotional_state != null && (
+                <Card className="card-soft border-border overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Heart className="h-4 w-4 text-primary" />
+                      Estado emocional / Humor
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-semibold text-foreground">{displaySession.clinical.emotional_state}<span className="text-sm font-normal text-muted-foreground">/10</span></p>
+                  </CardContent>
+                </Card>
+              )}
+              {displaySession.clinical.risk_status && (
+                <Card className="card-soft border-border overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <ShieldAlert className="h-4 w-4 text-primary" />
+                      Status de risco
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Badge
+                      variant={displaySession.clinical.risk_status === "high" ? "destructive" : "secondary"}
+                      className={`rounded-lg ${
+                        displaySession.clinical.risk_status === "high" ? "bg-destructive/20 text-destructive" :
+                        displaySession.clinical.risk_status === "medium" ? "bg-chart-amber/20 text-chart-amber" :
+                        "bg-primary/10 text-primary"
+                      }`}
+                    >
+                      {displaySession.clinical.risk_status === "normal" ? "Normal" :
+                       displaySession.clinical.risk_status === "low" ? "Baixo" :
+                       displaySession.clinical.risk_status === "medium" ? "Médio" : "Alto"}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              )}
+              {displaySession.clinical.evolution_notes && (
+                <Card className="card-soft border-border overflow-hidden md:col-span-2">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-primary" />
+                      Evolução do paciente
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{displaySession.clinical.evolution_notes}</p>
+                  </CardContent>
+                </Card>
+              )}
+              {displaySession.clinical.interventions && (
+                <Card className="card-soft border-border overflow-hidden md:col-span-2">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Target className="h-4 w-4 text-primary" />
+                      Técnicas / Intervenções utilizadas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{displaySession.clinical.interventions}</p>
+                  </CardContent>
+                </Card>
+              )}
+              {displaySession.clinical.homework && (
+                <Card className="card-soft border-border overflow-hidden md:col-span-2">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <ClipboardList className="h-4 w-4 text-primary" />
+                      Tarefas de casa / Combinados
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{displaySession.clinical.homework}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          ) : (
+            <div className="card-soft p-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                Nenhum dado clínico preenchido. Clique em Editar para adicionar humor, evolução, técnicas utilizadas, tarefas de casa e status de risco.
               </p>
             </div>
           )}

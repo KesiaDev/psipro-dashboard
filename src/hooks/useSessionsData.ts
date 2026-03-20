@@ -20,6 +20,15 @@ export interface SessionItem {
   professional_id?: string;
 }
 
+/** Campos clínicos da sessão (prontuário) */
+export interface SessionClinicalData {
+  emotional_state?: number; // 1-10, humor/estado emocional
+  evolution_notes?: string; // evolução do paciente
+  interventions?: string; // técnicas/intervenções utilizadas
+  homework?: string; // tarefas de casa e combinados
+  risk_status?: "normal" | "low" | "medium" | "high"; // status de risco
+}
+
 export interface CreateSessionInput {
   patient_id: string;
   professional_id?: string;
@@ -28,6 +37,8 @@ export interface CreateSessionInput {
   duration_minutes?: number;
   type?: string;
   notes?: string;
+  /** Campos clínicos do prontuário da sessão */
+  clinical?: SessionClinicalData;
 }
 
 export interface UseSessionsDataState {
@@ -158,6 +169,10 @@ export function useSessionsData(): UseSessionsDataState {
         if (input.professional_id) payload.professionalId = input.professional_id;
         if (input.duration_minutes != null) payload.duration = input.duration_minutes;
         if (input.notes) payload.notes = input.notes;
+        if (input.type) payload.type = input.type;
+        if (input.clinical && Object.keys(input.clinical).length > 0) {
+          payload.clinical = input.clinical;
+        }
         await api.patch(`/sessions/${id}`, payload);
         toast.success("Sessão atualizada");
         await fetchSessions();

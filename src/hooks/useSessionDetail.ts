@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
+import type { SessionClinicalData } from "@/hooks/useSessionsData";
 
 export interface SessionAIAnalysis {
   summary?: string;
@@ -25,6 +26,7 @@ export interface SessionDetail {
   scheduled_at?: string;
   start_at?: string;
   aiAnalysis?: SessionAIAnalysis;
+  clinical?: SessionClinicalData;
 }
 
 export interface UseSessionDetailState {
@@ -67,6 +69,29 @@ function parseAIAnalysis(raw: Record<string, unknown> | null | undefined): Sessi
     emotions: Array.isArray(raw.emotions) ? raw.emotions.map(String) : undefined,
     actionItems: Array.isArray(raw.actionItems) ? raw.actionItems.map(String) : undefined,
     riskFlags: Array.isArray(raw.riskFlags) ? raw.riskFlags.map(String) : undefined,
+  };
+}
+
+function parseClinicalData(raw: Record<string, unknown> | null | undefined): SessionClinicalData | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const emotional = raw.emotional_state ?? raw.emotionalState;
+  const risk = raw.risk_status ?? raw.riskStatus;
+  if (
+    emotional == null &&
+    !raw.evolution_notes &&
+    !raw.evolutionNotes &&
+    !raw.interventions &&
+    !raw.homework &&
+    risk == null
+  ) {
+    return undefined;
+  }
+  return {
+    emotional_state: emotional != null ? Number(emotional) : undefined,
+    evolution_notes: (raw.evolution_notes ?? raw.evolutionNotes) as string | undefined,
+    interventions: (raw.interventions as string) ?? undefined,
+    homework: (raw.homework as string) ?? undefined,
+    risk_status: (risk as SessionClinicalData["risk_status"]) ?? undefined,
   };
 }
 
@@ -117,6 +142,7 @@ export function useSessionDetail(id: string | undefined): UseSessionDetailState 
         scheduled_at: (data.scheduled_at as string) ?? (data.start_at as string),
         start_at: data.start_at as string,
         aiAnalysis: parseAIAnalysis(aiRaw ?? aiFromTopLevel),
+        clinical: parseClinicalData(data.clinical as Record<string, unknown> | undefined),
       });
     } catch (err) {
       setError(err as ApiError);

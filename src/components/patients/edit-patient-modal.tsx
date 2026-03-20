@@ -21,6 +21,7 @@ export interface EditPatientInput {
   date_of_birth: string | null;
   gender: string | null;
   status: "active" | "inactive" | "new";
+  progress?: "improving" | "stable" | "attention";
 }
 
 interface Props {
@@ -52,6 +53,7 @@ export function EditPatientModal({ open, onOpenChange, patientId, patientData, o
     date_of_birth: patientData?.date_of_birth ?? null,
     gender: (patientData as Patient & { gender?: string })?.gender ?? null,
     status: patientData?.status ?? "active",
+    progress: patientData?.progress ?? undefined,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +67,7 @@ export function EditPatientModal({ open, onOpenChange, patientId, patientData, o
         date_of_birth: patientData.date_of_birth ?? null,
         gender: (patientData as Patient & { gender?: string })?.gender ?? null,
         status: patientData.status ?? "active",
+        progress: patientData.progress ?? undefined,
       });
       setError(null);
     }
@@ -97,6 +100,7 @@ export function EditPatientModal({ open, onOpenChange, patientId, patientData, o
       payload.email = form.email?.trim() || undefined;
       payload.phone = form.phone?.trim() || undefined;
       payload.birthDate = form.date_of_birth || undefined;
+      if (form.progress) payload.progress = form.progress;
       await api.patch(`/patients/${patientId}`, payload);
       toast.success("Paciente atualizado com sucesso");
       onOpenChange(false);
@@ -192,6 +196,24 @@ export function EditPatientModal({ open, onOpenChange, patientId, patientData, o
                 <SelectItem value="inactive">Inativo</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm text-muted-foreground">Evolução clínica</Label>
+            <Select
+              value={form.progress ?? "_empty"}
+              onValueChange={(v) => setForm({ ...form, progress: v === "_empty" ? undefined : (v as EditPatientInput["progress"]) })}
+            >
+              <SelectTrigger className="rounded-xl">
+                <SelectValue placeholder="Não definido" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_empty">Não definido</SelectItem>
+                <SelectItem value="improving">Evoluindo</SelectItem>
+                <SelectItem value="stable">Estável</SelectItem>
+                <SelectItem value="attention">Atenção</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Define a evolução do paciente no tratamento.</p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>

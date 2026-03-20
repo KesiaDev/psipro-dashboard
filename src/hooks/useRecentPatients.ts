@@ -8,7 +8,7 @@ export interface RecentPatient {
   initials: string;
   lastSession: string;
   sessions: number;
-  progress: "improving" | "stable" | "attention";
+  progress?: "improving" | "stable" | "attention";
 }
 
 export interface UseRecentPatientsState {
@@ -55,7 +55,7 @@ export function useRecentPatients(): UseRecentPatientsState {
         initials: getInitials(((p.full_name as string) ?? p.name as string) ?? ""),
         lastSession: formatShortDate((p.last_session_at as string) ?? (p.lastSession as string) ?? null),
         sessions: Number(p.sessions_count ?? p.sessions ?? 0),
-        progress: ((p.progress as string) ?? "stable") as RecentPatient["progress"],
+        progress: (p.progress as RecentPatient["progress"]) ?? undefined,
       }));
       setPatients(mapped);
     } catch (err) {

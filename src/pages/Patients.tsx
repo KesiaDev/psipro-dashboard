@@ -43,6 +43,8 @@ const progressConfig: Record<string, { label: string; dot: string }> = {
   improving: { label: "Evoluindo", dot: "bg-primary" },
   stable: { label: "Estável", dot: "bg-chart-amber" },
   attention: { label: "Atenção", dot: "bg-destructive" },
+  /** Quando progress não foi definido pelo profissional, exibe "Não definido" em vez de "Estável" */
+  _undefined: { label: "Não definido", dot: "bg-muted" },
 };
 
 function getInitials(name: string): string {
@@ -446,12 +448,12 @@ const Patients = () => {
                     >
                       {statusConfig[patient.status]?.label ?? patient.status}
                     </Badge>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5" title={patient.progress ? undefined : "Defina a evolução do paciente ao editar o cadastro"}>
                       <span
-                        className={`h-2 w-2 rounded-full ${progressConfig[patient.progress ?? "stable"]?.dot ?? progressConfig.stable.dot}`}
+                        className={`h-2 w-2 rounded-full ${progressConfig[patient.progress ?? "_undefined"]?.dot ?? progressConfig._undefined.dot}`}
                       />
                       <span className="text-xs text-muted-foreground">
-                        {progressConfig[patient.progress ?? "stable"]?.label ?? "Estável"}
+                        {progressConfig[patient.progress ?? "_undefined"]?.label ?? "Não definido"}
                       </span>
                     </div>
                     </div>

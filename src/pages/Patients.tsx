@@ -22,8 +22,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Plus, Phone, Mail, MoreHorizontal, FileSpreadsheet, User, Pencil, Calendar, Trash2, RefreshCw, Users } from "lucide-react";
+import { Search, Plus, Phone, Mail, MoreHorizontal, FileSpreadsheet, User, Pencil, Calendar, Trash2, RefreshCw, Users, Link } from "lucide-react";
 import { usePatients } from "@/hooks/usePatients";
+import { api } from "@/services/api";
 import { VOICE_EVENT_FOCUS_PATIENT_SEARCH } from "@/components/VoiceCommandButton";
 import { ErrorState } from "@/components/ErrorState";
 import { EmptyState } from "@/components/EmptyState";
@@ -81,6 +82,32 @@ const Patients = () => {
   const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteMode, setBulkDeleteMode] = useState<"selected" | "all" | null>(null);
+  const [intakeLink, setIntakeLink] = useState<string | null>(null);
+  const [generatingIntake, setGeneratingIntake] = useState(false);
+  const [intakeCopied, setIntakeCopied] = useState(false);
+
+  const handleGenerateIntakeLink = async () => {
+    setGeneratingIntake(true);
+    try {
+      const data = await api.post<{ token: string; link: string; expiresAt: string }>(
+        "/patients/intake-token"
+      );
+      setIntakeLink(data.link);
+      setIntakeCopied(false);
+    } catch {
+      toast.error("Erro ao gerar link de intake");
+    } finally {
+      setGeneratingIntake(false);
+    }
+  };
+
+  const handleCopyIntakeLink = async () => {
+    if (!intakeLink) return;
+    await navigator.clipboard.writeText(intakeLink);
+    setIntakeCopied(true);
+    toast.success("Link copiado!");
+    setTimeout(() => setIntakeCopied(false), 3000);
+  };
 
   useEffect(() => {
     const handler = () => searchInputRef.current?.focus();
@@ -158,6 +185,19 @@ const Patients = () => {
             <Button
               variant="outline"
               className="rounded-xl gap-2"
+              onClick={handleGenerateIntakeLink}
+              disabled={generatingIntake}
+            >
+              {generatingIntake ? (
+                <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Link className="h-4 w-4" />
+              )}
+              {generatingIntake ? "Gerando..." : "Link de Intake"}
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-xl gap-2"
               onClick={() => setShowImportModal(true)}
             >
               <FileSpreadsheet className="h-4 w-4" />
@@ -209,6 +249,38 @@ const Patients = () => {
           onOpenChange={setShowImportModal}
           onSuccess={refetch}
         />
+
+        {/* Modal de Link de Intake */}
+        <AlertDialog open={!!intakeLink} onOpenChange={(open) => !open && setIntakeLink(null)}>
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Link className="h-5 w-5 text-primary" />
+                Link de Intake Gerado
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p>Envie este link para o paciente pelo WhatsApp ou e-mail. Válido por <strong>7 dias</strong>.</p>
+                  <div
+                    className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2.5 cursor-pointer hover:bg-muted/80 transition-colors"
+                    onClick={handleCopyIntakeLink}
+                    title="Clique para copiar"
+                  >
+                    <span className="flex-1 text-sm text-foreground break-all select-all font-mono">
+                      {intakeLink}
+                    </span>
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIntakeLink(null)}>Fechar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleCopyIntakeLink}>
+                {intakeCopied ? "✓ Copiado!" : "Copiar link"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Barra de exclusão em lote */}
         {filtered.length > 0 && (

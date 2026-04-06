@@ -5,13 +5,16 @@ import { useClinic } from "@/contexts/ClinicContext";
 export interface DashboardStats {
   patientsCount: number;
   appointmentsToday: number;
-  returnRate: number;
+  sessionsThisWeek: number;
+  sessionsThisMonth: number;
   hoursThisWeek: number;
   financialSummary?: {
     totalIncome: number;
     totalExpenses: number;
     netProfit: number;
     pending: number;
+    receitaMes: number;
+    totalAReceber: number;
   };
 }
 
@@ -32,29 +35,38 @@ export function useDashboardStats(): DashboardStatsState {
     setLoading(true);
     setError(null);
     try {
-      const [patientsRes, appointmentsRes, sessionsRes, financialRes] = await Promise.allSettled([
-        api.get<{ count: number }>("/patients/count"),
-        api.get<{ count: number; appointments?: unknown[] }>("/appointments/today"),
-        api.get<{ returnRate?: number; percentage?: number }>("/sessions/stats"),
-        api.get<{ totalIncome?: number; totalExpenses?: number; netProfit?: number; pending?: number }>("/financial/summary"),
+      const today = new Date().toISOString().slice(0, 10);
+      const [patientsRes, appointmentsRes, sessionsRes, financialRes, allAppointmentsRes] = await Promise.allSettled([
+        api.get<unknown>("/patients/count"),
+        api.get<{ count: number; appointments?: unknown[]; data?: unknown[]; items?: unknown[] }>("/appointments/today"),
+        api.get<{ sessionsThisWeek?: number; sessionsThisMonth?: number; hoursThisWeek?: number; returnRate?: number }>("/sessions/stats"),
+        api.get<{ totalIncome?: number; totalExpenses?: number; netProfit?: number; pending?: number; receitaMes?: number; totalAReceber?: number }>("/financial/summary"),
+        api.get<unknown[]>(`/appointments?start=${today}&end=${today}`),
       ]);
 
-      const patientsCount = patientsRes.status === "fulfilled" ? patientsRes.value.count : 0;
-      const appointmentsData = appointmentsRes.status === "fulfilled" ? appointmentsRes.value : null;
-      const appointmentsToday = appointmentsData?.count ?? (Array.isArray(appointmentsData?.appointments) ? appointmentsData.appointments.length : 0);
-      const sessionsData = sessionsRes.status === "fulfilled" ? sessionsRes.value : null;
-      const returnRate = sessionsData?.returnRate ?? sessionsData?.percentage ?? 0;
-      const financialData = financialRes.status === "fulfilled" ? financialRes.value : null;
+      // patients count — API may return raw number or {count: N}
+      const patientsRaw = patientsRes.status === "fulfilled" ? patientsRes.value : 0;
+      const patientsCount = typeof patientsRaw === "number" ? patientsRaw : (patientsRaw as { count?: number })?.count ?? 0;
 
-      let hoursThisWeek = 0;
-      if (sessionsRes.status === "fulfilled" && (sessionsRes.value as { hoursThisWeek?: number }).hoursThisWeek !== undefined) {
-        hoursThisWeek = (sessionsRes.value as { hoursThisWeek: number }).hoursThisWeek;
-      }
+      // appointments today — /today endpoint has timezone issue, fallback to date-filtered list
+      const todayData = appointmentsRes.status === "fulfilled" ? appointmentsRes.value : null;
+      const todayFromEndpoint = todayData?.count ?? (Array.isArray(todayData?.appointments) ? todayData.appointments.length : 0) ?? (Array.isArray(todayData?.data) ? todayData.data.length : 0);
+      const allAptRaw = allAppointmentsRes.status === "fulfilled" ? allAppointmentsRes.value : [];
+      const allAptArr = Array.isArray(allAptRaw) ? allAptRaw : [];
+      const appointmentsToday = allAptArr.length > 0 ? allAptArr.length : (typeof todayFromEndpoint === "number" ? todayFromEndpoint : 0);
+
+      const sessionsData = sessionsRes.status === "fulfilled" ? sessionsRes.value : null;
+      const sessionsThisWeek = sessionsData?.sessionsThisWeek ?? 0;
+      const sessionsThisMonth = sessionsData?.sessionsThisMonth ?? 0;
+      const hoursThisWeek = sessionsData?.hoursThisWeek ?? sessionsThisWeek; // fallback: 1 sessão ≈ 1h
+
+      const financialData = financialRes.status === "fulfilled" ? financialRes.value : null;
 
       setData({
         patientsCount,
-        appointmentsToday: typeof appointmentsToday === "number" ? appointmentsToday : 0,
-        returnRate: typeof returnRate === "number" ? returnRate : 0,
+        appointmentsToday,
+        sessionsThisWeek,
+        sessionsThisMonth,
         hoursThisWeek,
         financialSummary: financialData
           ? {
@@ -62,6 +74,8 @@ export function useDashboardStats(): DashboardStatsState {
               totalExpenses: financialData.totalExpenses ?? 0,
               netProfit: financialData.netProfit ?? 0,
               pending: financialData.pending ?? 0,
+              receitaMes: financialData.receitaMes ?? 0,
+              totalAReceber: financialData.totalAReceber ?? 0,
             }
           : undefined,
       });

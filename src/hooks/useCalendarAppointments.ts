@@ -73,11 +73,10 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
       try {
         const start = startDate ?? new Date().toISOString().slice(0, 10);
         const end = endDate ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-        const weekStart = new Date(start);
-        weekStart.setHours(0, 0, 0, 0);
-        const day0 = weekStart.getTime();
-        const endDateObj = new Date(end);
-        endDateObj.setHours(23, 59, 59, 999);
+        // Usar UTC midnight para day0 para evitar shift de timezone (datas ISO sem hora são UTC)
+        const day0 = new Date(start + 'T00:00:00.000Z').getTime();
+        const weekStart = new Date(start + 'T00:00:00.000Z');
+        const endDateObj = new Date(end + 'T23:59:59.999Z');
 
         const toCalendarAppointment = (
           a: Record<string, unknown>,
@@ -94,9 +93,9 @@ export function useCalendarAppointments(): UseCalendarAppointmentsState {
           const rawStatus = (a.status as string) ?? "pending";
           const status: "confirmed" | "pending" | "completed" =
             rawStatus === "realizada" || rawStatus === "completed" ? "completed"
-            : rawStatus === "cancelada" || rawStatus === "cancelled" ? "pending"
-            : rawStatus === "agendada" || rawStatus === "scheduled" || rawStatus === "em andamento" || rawStatus === "in-progress" ? "confirmed"
-            : rawStatus === "confirmed" ? "confirmed"
+            : rawStatus === "cancelada" || rawStatus === "cancelled" || rawStatus === "cancelado" ? "pending"
+            : rawStatus === "agendada" || rawStatus === "scheduled" || rawStatus === "em andamento" || rawStatus === "in-progress"
+              || rawStatus === "confirmed" || rawStatus === "confirmada" || rawStatus === "confirmado" ? "confirmed"
             : "pending";
           const rawId = a.id ?? "";
           return {

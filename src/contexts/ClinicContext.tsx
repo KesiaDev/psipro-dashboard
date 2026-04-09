@@ -62,11 +62,17 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
 
   const getPersistedWorkspace = useCallback(() => {
     if (typeof window === "undefined") return null;
-    const stored = localStorage.getItem(WORKSPACE_CHOSEN_KEY);
+    const stored = localStorage.getItem(WORKSPACE_CHOSEN_KEY) ?? sessionStorage.getItem(WORKSPACE_CHOSEN_KEY);
     if (!stored) return null;
     try {
-      return JSON.parse(stored) as { clinicId?: string; role?: UserRole };
+      const parsed = JSON.parse(stored) as { clinicId?: string; role?: UserRole };
+      // Migra legado de sessionStorage para localStorage
+      localStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify(parsed));
+      sessionStorage.removeItem(WORKSPACE_CHOSEN_KEY);
+      return parsed;
     } catch {
+      localStorage.removeItem(WORKSPACE_CHOSEN_KEY);
+      sessionStorage.removeItem(WORKSPACE_CHOSEN_KEY);
       return null;
     }
   }, []);
@@ -102,27 +108,35 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (clinics.length === 0) return;
-    const ws = localStorage.getItem(WORKSPACE_CHOSEN_KEY);
-    if (ws) {
-      try {
-        const { clinicId, role } = JSON.parse(ws) as { clinicId?: string; role?: UserRole };
-        if (clinicId && clinics.some((c) => c.id === clinicId)) {
-          setSelectedClinicIdState(clinicId);
-          localStorage.setItem(CLINIC_ID_KEY, clinicId);
-          if (role && ["owner", "admin", "psychologist"].includes(role)) setUserRole(role);
-        }
-      } catch {
-        localStorage.removeItem(WORKSPACE_CHOSEN_KEY);
+    const persisted = getPersistedWorkspace();
+    const persistedClinicId = persisted?.clinicId;
+    const persistedRole = persisted?.role;
+    const hasValidPersistedClinic =
+      !!persistedClinicId && clinics.some((c) => c.id === persistedClinicId);
+
+    if (hasValidPersistedClinic) {
+      setSelectedClinicIdState(persistedClinicId!);
+      localStorage.setItem(CLINIC_ID_KEY, persistedClinicId!);
+      if (persistedRole && ["owner", "admin", "psychologist"].includes(persistedRole)) {
+        setUserRole(persistedRole);
       }
-    } else if (!selectedClinicId) {
-      setSelectedClinicIdState(clinics[0].id);
-      if (clinics.length === 1) {
-        localStorage.setItem(CLINIC_ID_KEY, clinics[0].id);
-        localStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ clinicId: clinics[0].id, role: "owner" }));
-        setWorkspaceConfirmed(true);
-      }
+      return;
     }
-  }, [clinics]);
+
+    // Persistência inválida: limpa para não bloquear o fluxo e evitar tela "travada".
+    localStorage.removeItem(WORKSPACE_CHOSEN_KEY);
+    sessionStorage.removeItem(WORKSPACE_CHOSEN_KEY);
+
+    if (!selectedClinicId || !clinics.some((c) => c.id === selectedClinicId)) {
+      setSelectedClinicIdState(clinics[0].id);
+    }
+
+    if (clinics.length === 1) {
+      localStorage.setItem(CLINIC_ID_KEY, clinics[0].id);
+      localStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ clinicId: clinics[0].id, role: "owner" }));
+      setWorkspaceConfirmed(true);
+    }
+  }, [clinics, selectedClinicId, getPersistedWorkspace]);
 
   const selectedClinic =
     clinics.find((c) => c.id === selectedClinicId) || clinics[0] || ({

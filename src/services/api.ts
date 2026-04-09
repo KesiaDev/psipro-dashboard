@@ -11,6 +11,9 @@ const CLINIC_ID_KEY = "clinicId";
 const WORKSPACE_CHOSEN_KEY = "psipro_workspace_chosen";
 const TOKEN_KEY = "psipro_token";
 const USER_KEY = "psipro_user";
+const REQUEST_TIMEOUT_MS = 15_000;
+const GET_CACHE_TTL_MS = 10_000;
+const GET_RETRY_DELAY_MS = 250;
 
 export { CLINIC_ID_KEY, WORKSPACE_CHOSEN_KEY };
 
@@ -28,10 +31,43 @@ if (!baseURL && import.meta.env.DEV) {
 
 const axiosInstance = axios.create({
   baseURL: baseURL || undefined,
+  timeout: REQUEST_TIMEOUT_MS,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+const inFlightGetRequests = new Map<string, Promise<unknown>>();
+const getResponseCache = new Map<string, { expiresAt: number; data: unknown }>();
+
+function getCacheKey(url: string): string {
+  const clinicId = localStorage.getItem(CLINIC_ID_KEY)?.trim() || "";
+  return `${clinicId}::${url}`;
+}
+
+function shouldRetryGet(error: unknown): boolean {
+  const axiosError = error as AxiosError;
+  const status = axiosError.response?.status ?? 0;
+  const code = (axiosError as AxiosError & { code?: string }).code ?? "";
+  return status >= 500 || status === 0 || code === "ECONNABORTED";
+}
+
+async function getWithRetry<T>(url: string): Promise<T> {
+  try {
+    const res = await axiosInstance.get<T>(url);
+    return res.data;
+  } catch (error) {
+    if (!shouldRetryGet(error)) throw error;
+    await new Promise((resolve) => setTimeout(resolve, GET_RETRY_DELAY_MS));
+    const retryRes = await axiosInstance.get<T>(url);
+    return retryRes.data;
+  }
+}
+
+function clearApiGetCache() {
+  inFlightGetRequests.clear();
+  getResponseCache.clear();
+}
 
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_KEY);
@@ -62,6 +98,7 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
       localStorage.removeItem(CLINIC_ID_KEY);
+      localStorage.removeItem(WORKSPACE_CHOSEN_KEY);
       sessionStorage.removeItem(WORKSPACE_CHOSEN_KEY);
       window.dispatchEvent(new CustomEvent("psipro:auth:401"));
     }
@@ -80,11 +117,41 @@ axiosInstance.interceptors.response.use(
 );
 
 export const api = {
-  get: <T>(url: string) =>
-    axiosInstance.get<T>(url).then((res) => res.data),
+  get: <T>(url: string) => {
+    const cacheKey = getCacheKey(url);
+    const now = Date.now();
+    const cached = getResponseCache.get(cacheKey);
+
+    if (cached && cached.expiresAt > now) {
+      return Promise.resolve(cached.data as T);
+    }
+
+    const inFlight = inFlightGetRequests.get(cacheKey);
+    if (inFlight) {
+      return inFlight as Promise<T>;
+    }
+
+    const request = getWithRetry<T>(url)
+      .then((data) => {
+        getResponseCache.set(cacheKey, {
+          expiresAt: Date.now() + GET_CACHE_TTL_MS,
+          data,
+        });
+        return data;
+      })
+      .finally(() => {
+        inFlightGetRequests.delete(cacheKey);
+      });
+
+    inFlightGetRequests.set(cacheKey, request as Promise<unknown>);
+    return request;
+  },
 
   post: <T>(url: string, body?: unknown) =>
-    axiosInstance.post<T>(url, body).then((res) => res.data),
+    axiosInstance.post<T>(url, body).then((res) => {
+      clearApiGetCache();
+      return res.data;
+    }),
 
   postForm: <T>(url: string, formData: FormData, onProgress?: (percent: number) => void) =>
     axiosInstance
@@ -98,14 +165,26 @@ export const api = {
           },
         }),
       })
-      .then((res) => res.data),
+      .then((res) => {
+        clearApiGetCache();
+        return res.data;
+      }),
 
   put: <T>(url: string, body?: unknown) =>
-    axiosInstance.put<T>(url, body).then((res) => res.data),
+    axiosInstance.put<T>(url, body).then((res) => {
+      clearApiGetCache();
+      return res.data;
+    }),
 
   patch: <T>(url: string, body?: unknown) =>
-    axiosInstance.patch<T>(url, body).then((res) => res.data),
+    axiosInstance.patch<T>(url, body).then((res) => {
+      clearApiGetCache();
+      return res.data;
+    }),
 
   delete: <T>(url: string) =>
-    axiosInstance.delete<T>(url).then((res) => res.data),
+    axiosInstance.delete<T>(url).then((res) => {
+      clearApiGetCache();
+      return res.data;
+    }),
 };

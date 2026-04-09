@@ -74,6 +74,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser({ id: String(userData?.id ?? email), email: userData?.email ?? email, ...userData } as AuthUser);
         setSession({ access_token: token });
         localStorage.removeItem(CLINIC_ID_KEY);
+        localStorage.removeItem(WORKSPACE_CHOSEN_KEY);
         sessionStorage.removeItem(WORKSPACE_CHOSEN_KEY);
         return { error: null };
       }
@@ -100,7 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem(AUTH_KEY, JSON.stringify(userToSave));
         if (userData.clinicId) {
           localStorage.setItem(CLINIC_ID_KEY, userData.clinicId);
-          sessionStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ clinicId: userData.clinicId, role: "owner" }));
+          localStorage.setItem(WORKSPACE_CHOSEN_KEY, JSON.stringify({ clinicId: userData.clinicId, role: "owner" }));
         }
         setUser(userToSave);
         setSession({ access_token: token });
@@ -138,6 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(AUTH_KEY);
     localStorage.removeItem(CLINIC_ID_KEY);
+    localStorage.removeItem(WORKSPACE_CHOSEN_KEY);
     sessionStorage.removeItem(WORKSPACE_CHOSEN_KEY);
     setUser(null);
     setSession(null);

@@ -10,6 +10,7 @@ import {
   DollarSign,
   LogOut,
   Activity,
+  CreditCard,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useClinic } from "@/contexts/ClinicContext";
@@ -40,11 +41,12 @@ const mainNav = [
   { title: "Sessões", url: "/sessions", icon: MessageSquare },
   { title: "Financeiro", url: "/financials", icon: DollarSign },
   { title: "Relatórios", url: "/reports", icon: FileText },
-  { title: "System Health", url: "/system-health", icon: Activity, adminOnly: true },
+  { title: "System Health", url: "/system-health", icon: Activity, developerOnly: true },
 ];
 
 const bottomNav = [
   { title: "Configurações", url: "/settings", icon: Settings },
+  { title: "Plano & Billing", url: "/billing", icon: CreditCard },
 ];
 
 function getInitials(name: string): string {
@@ -65,6 +67,12 @@ export function AppSidebar() {
   const { userRole } = useClinic();
 
   const displayName = profile?.name?.trim() || "";
+  const normalizedEmail = (profile?.email ?? "").trim().toLowerCase();
+  const developerEmails = (import.meta.env.VITE_DEVELOPER_EMAILS ?? "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+  const isDeveloper = import.meta.env.DEV || developerEmails.includes(normalizedEmail);
   const displayProfessionalType = profile?.professionalType?.trim() || "";
   const displayCrp = profile?.crp?.trim() || "";
   const hasProfile = displayName || displayProfessionalType || displayCrp;
@@ -90,7 +98,10 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNav
-                .filter((item) => !("adminOnly" in item && item.adminOnly) || userRole === "admin" || userRole === "owner")
+                .filter((item) => {
+                  if ("developerOnly" in item && item.developerOnly) return isDeveloper;
+                  return !("adminOnly" in item && item.adminOnly) || userRole === "admin" || userRole === "owner";
+                })
                 .map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>

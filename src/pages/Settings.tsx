@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Camera, Bell, Shield, Clock, Smartphone, Accessibility, Palette, Check, Calendar, Loader2 } from "lucide-react";
+import { Save, Camera, Bell, Shield, Clock, Smartphone, Accessibility, Palette, Check, Calendar, Loader2, MessageCircle, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
-import { useGoogleCalendarIntegration } from "@/hooks/useIntegrations";
+import { useGoogleCalendarIntegration, useWhatsAppIntegration } from "@/hooks/useIntegrations";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTheme } from "next-themes";
 import { useThemePalette, PALETTES } from "@/contexts/ThemeContext";
@@ -80,6 +81,36 @@ const Settings = ({ defaultTab }: SettingsProps) => {
     disconnect: disconnectGoogleCal,
     refetch: refetchGoogleCal,
   } = useGoogleCalendarIntegration();
+
+  const {
+    status: whatsAppStatus,
+    loading: whatsAppLoading,
+    connect: connectWhatsApp,
+    disconnect: disconnectWhatsApp,
+  } = useWhatsAppIntegration();
+
+  const [whatsAppModal, setWhatsAppModal] = useState(false);
+  const [waEvolutionApiUrl, setWaEvolutionApiUrl] = useState("https://evolution-go-production-ba5d.up.railway.app");
+  const [waEvolutionToken, setWaEvolutionToken] = useState("");
+  const [waPhone, setWaPhone] = useState("");
+  const [waConnecting, setWaConnecting] = useState(false);
+
+  const handleConnectWhatsApp = async () => {
+    setWaConnecting(true);
+    const result = await connectWhatsApp({
+      provider: "evolution",
+      evolutionApiUrl: waEvolutionApiUrl,
+      evolutionInstanceToken: waEvolutionToken,
+      phoneNumber: waPhone,
+    } as any);
+    setWaConnecting(false);
+    if (result.success) {
+      toast.success("WhatsApp Business conectado!");
+      setWhatsAppModal(false);
+    } else {
+      toast.error(result.error ?? "Erro ao conectar WhatsApp.");
+    }
+  };
 
   useEffect(() => {
     const status = searchParams.get("google_calendar");
@@ -594,30 +625,115 @@ const Settings = ({ defaultTab }: SettingsProps) => {
                   )}
                 </div>
 
-                {[
-                  { name: "WhatsApp Business", desc: "Envie lembretes e mensagens automatizadas" },
-                  { name: "Gateway de Pagamento", desc: "Receba pagamentos online dos pacientes" },
-                ].map((item) => (
-                  <div key={item.name} className="flex items-center justify-between py-4 border-b border-border/50 last:border-0">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-muted">
-                        <Smartphone className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.desc}</p>
-                      </div>
+                {/* WhatsApp Business */}
+                <div className="flex items-center justify-between py-4 border-b border-border/50">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-muted">
+                      <MessageCircle className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <Button variant="outline-gold" size="sm" className="rounded-xl" disabled>
-                      Em breve
-                    </Button>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">WhatsApp Business</p>
+                      <p className="text-xs text-muted-foreground">
+                        {whatsAppStatus?.connected
+                          ? `Conectado${whatsAppStatus.phoneNumber ? ` · ${whatsAppStatus.phoneNumber}` : ""}`
+                          : "Envie lembretes automáticos aos pacientes"}
+                      </p>
+                    </div>
                   </div>
-                ))}
+                  {whatsAppLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : whatsAppStatus?.connected ? (
+                    <Button variant="outline" size="sm" className="rounded-xl gap-2 text-destructive hover:text-destructive" onClick={() => disconnectWhatsApp()}>
+                      <X className="h-3 w-3" /> Desconectar
+                    </Button>
+                  ) : (
+                    <Button variant="outline-gold" size="sm" className="rounded-xl gap-2" onClick={() => setWhatsAppModal(true)}>
+                      <MessageCircle className="h-3 w-3" /> Configurar
+                    </Button>
+                  )}
+                </div>
+
+                {/* Gateway de Pagamento */}
+                <div className="flex items-center justify-between py-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-muted">
+                      <Smartphone className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Gateway de Pagamento</p>
+                      <p className="text-xs text-muted-foreground">Receba pagamentos online dos pacientes</p>
+                    </div>
+                  </div>
+                  <Button variant="outline-gold" size="sm" className="rounded-xl" disabled>
+                    Em breve
+                  </Button>
+                </div>
               </div>
             </div>
           </TabsContent>
         </Tabs>
       </PageContainer>
+
+      {/* Modal WhatsApp */}
+      <Dialog open={whatsAppModal} onOpenChange={setWhatsAppModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-green-500" />
+              Conectar WhatsApp Business
+            </DialogTitle>
+            <DialogDescription>
+              Conecte via <strong>Evolution GO</strong> para enviar confirmações e lembretes automáticos aos pacientes.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="wa-api-url">URL do Evolution GO</Label>
+              <Input
+                id="wa-api-url"
+                placeholder="https://evolution-go-production-ba5d.up.railway.app"
+                value={waEvolutionApiUrl}
+                onChange={(e) => setWaEvolutionApiUrl(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="wa-evo-token">Token da Instância</Label>
+              <Input
+                id="wa-evo-token"
+                placeholder="Token da instância (ex: 911be389-...)"
+                value={waEvolutionToken}
+                onChange={(e) => setWaEvolutionToken(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Encontre em: Evolution GO Manager → sua instância → Settings
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="wa-phone">Número WhatsApp (referência)</Label>
+              <Input
+                id="wa-phone"
+                placeholder="(54) 99999-9999"
+                value={waPhone}
+                onChange={(e) => setWaPhone(e.target.value)}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setWhatsAppModal(false)}>
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleConnectWhatsApp}
+                disabled={waConnecting || !waEvolutionApiUrl || !waEvolutionToken}
+              >
+                {waConnecting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Conectando...</> : "Conectar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

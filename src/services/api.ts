@@ -76,8 +76,12 @@ axiosInstance.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  // x-clinic-id em TODAS requisições (exceção: rotas /auth/* antes de selecionar clínica)
-  config.headers["X-Clinic-Id"] = clinicId || "";
+  // Só envia X-Clinic-Id quando há valor: string vazia quebra validação (ex.: IsUUID) e retorna 400.
+  if (clinicId) {
+    config.headers["X-Clinic-Id"] = clinicId;
+  } else {
+    delete config.headers["X-Clinic-Id"];
+  }
   if (!clinicId && !config.url?.startsWith("/auth/") && import.meta.env.DEV) {
     console.warn("[api] Requisição sem clinicId:", config.url);
   }

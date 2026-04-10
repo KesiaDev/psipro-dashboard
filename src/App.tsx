@@ -33,6 +33,7 @@ const SystemHealth = lazy(() => import("./pages/SystemHealth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Billing = lazy(() => import("./pages/Billing"));
+const Chat = lazy(() => import("./pages/Chat"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -86,6 +87,7 @@ const App = () => (
                   <Route path="/system-health" element={<ProtectedRoute><ClinicGate><AdminRoute><DeveloperRoute><SystemHealth /></DeveloperRoute></AdminRoute></ClinicGate></ProtectedRoute>} />
                   <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
                   <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+                  <Route path="/chat" element={<ProtectedRoute><ClinicGate><Chat /></ClinicGate></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

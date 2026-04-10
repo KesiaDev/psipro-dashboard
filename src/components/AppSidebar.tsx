@@ -11,6 +11,7 @@ import {
   LogOut,
   Activity,
   CreditCard,
+  MessageCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useClinic } from "@/contexts/ClinicContext";
@@ -39,6 +40,7 @@ const mainNav = [
   { title: "Pacientes", url: "/patients", icon: Users },
   { title: "Agenda", url: "/calendar", icon: CalendarDays },
   { title: "Sessões", url: "/sessions", icon: MessageSquare },
+  { title: "Chat WhatsApp", url: "/chat", icon: MessageCircle },
   { title: "Financeiro", url: "/financials", icon: DollarSign },
   { title: "Relatórios", url: "/reports", icon: FileText },
   { title: "System Health", url: "/system-health", icon: Activity, developerOnly: true },

@@ -99,10 +99,10 @@ const Settings = ({ defaultTab }: SettingsProps) => {
     setWaConnecting(true);
     const result = await connectWhatsApp({
       provider: "evolution",
-      evolutionApiUrl: waEvolutionApiUrl,
-      evolutionInstanceToken: waEvolutionToken,
-      phoneNumber: waPhone,
-    } as any);
+      evolutionApiUrl: waEvolutionApiUrl.trim(),
+      evolutionInstanceToken: waEvolutionToken.trim(),
+      phoneNumber: waPhone.trim() || undefined,
+    });
     setWaConnecting(false);
     if (result.success) {
       toast.success("WhatsApp Business conectado!");

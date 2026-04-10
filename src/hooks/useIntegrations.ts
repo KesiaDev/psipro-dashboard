@@ -66,3 +66,73 @@ export function useGoogleCalendarIntegration() {
     disconnect,
   };
 }
+
+// ─── WhatsApp Business ──────────────────────────────────────────────────────
+
+export interface WhatsAppStatus {
+  connected: boolean;
+  phoneNumber?: string | null;
+  lastSyncAt?: string | null;
+}
+
+/** Payload enviado ao backend; Z-API (legado) ou Evolution GO. */
+export interface WhatsAppConnectParams {
+  provider?: "zapi" | "evolution";
+  /** Z-API */
+  instanceId?: string;
+  token?: string;
+  clientToken?: string;
+  /** Evolution GO */
+  evolutionApiUrl?: string;
+  evolutionInstanceToken?: string;
+  phoneNumber?: string;
+}
+
+export function useWhatsAppIntegration() {
+  const { clinicId } = useClinic();
+  const [status, setStatus] = useState<WhatsAppStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchStatus = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get<WhatsAppStatus>("/integrations/whatsapp/status");
+      setStatus(res ?? { connected: false });
+    } catch {
+      setStatus({ connected: false });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (clinicId) fetchStatus();
+    else {
+      setStatus({ connected: false });
+      setLoading(false);
+    }
+  }, [clinicId, fetchStatus]);
+
+  const connect = useCallback(async (params: WhatsAppConnectParams): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await api.post<{ success: boolean; error?: string }>("/integrations/whatsapp/connect", params);
+      if (res.success) await fetchStatus();
+      return res;
+    } catch (err) {
+      const apiErr = err as ApiError;
+      return { success: false, error: apiErr?.message ?? "Erro ao conectar WhatsApp." };
+    }
+  }, [fetchStatus]);
+
+  const disconnect = useCallback(async (): Promise<boolean> => {
+    try {
+      await api.delete("/integrations/whatsapp/disconnect");
+      setStatus({ connected: false });
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  return { status, loading, refetch: fetchStatus, connect, disconnect };
+}

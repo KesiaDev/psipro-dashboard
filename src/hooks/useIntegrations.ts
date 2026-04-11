@@ -75,16 +75,14 @@ export interface WhatsAppStatus {
   lastSyncAt?: string | null;
 }
 
-/** Payload enviado ao backend; Z-API (legado) ou Evolution GO. */
+/** Corpo alinhado ao Nest `POST /api/integrations/whatsapp/connect` (Evolution GO ou Z-API). */
 export interface WhatsAppConnectParams {
   provider?: "zapi" | "evolution";
-  /** Z-API */
+  evolutionApiUrl?: string;
+  evolutionInstanceToken?: string;
   instanceId?: string;
   token?: string;
   clientToken?: string;
-  /** Evolution GO */
-  evolutionApiUrl?: string;
-  evolutionInstanceToken?: string;
   phoneNumber?: string;
 }
 
@@ -115,7 +113,10 @@ export function useWhatsAppIntegration() {
 
   const connect = useCallback(async (params: WhatsAppConnectParams): Promise<{ success: boolean; error?: string }> => {
     try {
-      const res = await api.post<{ success: boolean; error?: string }>("/integrations/whatsapp/connect", params);
+      const res = await api.post<{ success: boolean; error?: string }>(
+        "/integrations/whatsapp/connect",
+        params,
+      );
       if (res.success) await fetchStatus();
       return res;
     } catch (err) {

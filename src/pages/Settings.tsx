@@ -90,19 +90,36 @@ const Settings = ({ defaultTab }: SettingsProps) => {
   } = useWhatsAppIntegration();
 
   const [whatsAppModal, setWhatsAppModal] = useState(false);
-  const [waEvolutionApiUrl, setWaEvolutionApiUrl] = useState("https://evolution-go-production-ba5d.up.railway.app");
+  /** Evolution GO (recomendado) vs Z-API legado */
+  const [waMode, setWaMode] = useState<"evolution" | "zapi">("evolution");
+  const [waEvolutionApiUrl, setWaEvolutionApiUrl] = useState(
+    () => (import.meta.env.VITE_EVOLUTION_API_URL as string | undefined)?.trim() || "",
+  );
   const [waEvolutionToken, setWaEvolutionToken] = useState("");
+  const [waEvolutionPhone, setWaEvolutionPhone] = useState("");
+  const [waInstanceId, setWaInstanceId] = useState("");
+  const [waToken, setWaToken] = useState("");
+  const [waClientToken, setWaClientToken] = useState("");
   const [waPhone, setWaPhone] = useState("");
   const [waConnecting, setWaConnecting] = useState(false);
 
   const handleConnectWhatsApp = async () => {
     setWaConnecting(true);
-    const result = await connectWhatsApp({
-      provider: "evolution",
-      evolutionApiUrl: waEvolutionApiUrl.trim(),
-      evolutionInstanceToken: waEvolutionToken.trim(),
-      phoneNumber: waPhone.trim() || undefined,
-    });
+    const result =
+      waMode === "evolution"
+        ? await connectWhatsApp({
+            provider: "evolution",
+            evolutionApiUrl: waEvolutionApiUrl.trim(),
+            evolutionInstanceToken: waEvolutionToken.trim(),
+            phoneNumber: waEvolutionPhone.trim() || undefined,
+          })
+        : await connectWhatsApp({
+            provider: "zapi",
+            instanceId: waInstanceId.trim(),
+            token: waToken.trim(),
+            clientToken: waClientToken.trim(),
+            phoneNumber: waPhone.trim() || undefined,
+          });
     setWaConnecting(false);
     if (result.success) {
       toast.success("WhatsApp Business conectado!");
@@ -683,54 +700,120 @@ const Settings = ({ defaultTab }: SettingsProps) => {
               Conectar WhatsApp Business
             </DialogTitle>
             <DialogDescription>
-              Conecte via <strong>Evolution GO</strong> para enviar confirmações e lembretes automáticos aos pacientes.
+              <strong>Evolution GO</strong> é o fluxo recomendado (mesma API usada no PsiPro Chat). Z-API permanece
+              disponível como legado.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="wa-api-url">URL do Evolution GO</Label>
-              <Input
-                id="wa-api-url"
-                placeholder="https://evolution-go-production-ba5d.up.railway.app"
-                value={waEvolutionApiUrl}
-                onChange={(e) => setWaEvolutionApiUrl(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="wa-evo-token">Token da Instância</Label>
-              <Input
-                id="wa-evo-token"
-                placeholder="Token da instância (ex: 911be389-...)"
-                value={waEvolutionToken}
-                onChange={(e) => setWaEvolutionToken(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Encontre em: Evolution GO Manager → sua instância → Settings
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="wa-phone">Número WhatsApp (referência)</Label>
-              <Input
-                id="wa-phone"
-                placeholder="(54) 99999-9999"
-                value={waPhone}
-                onChange={(e) => setWaPhone(e.target.value)}
-              />
-            </div>
+          <Tabs value={waMode} onValueChange={(v) => setWaMode(v as "evolution" | "zapi")} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="evolution">Evolution GO</TabsTrigger>
+              <TabsTrigger value="zapi">Z-API (legado)</TabsTrigger>
+            </TabsList>
 
-            <div className="flex gap-3 pt-2">
-              <Button variant="outline" className="flex-1" onClick={() => setWhatsAppModal(false)}>
-                Cancelar
-              </Button>
-              <Button
-                className="flex-1"
-                onClick={handleConnectWhatsApp}
-                disabled={waConnecting || !waEvolutionApiUrl || !waEvolutionToken}
-              >
-                {waConnecting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Conectando...</> : "Conectar"}
-              </Button>
-            </div>
+            <TabsContent value="evolution" className="space-y-4 py-2 mt-2">
+              <div className="space-y-2">
+                <Label htmlFor="wa-api-url">URL base do Evolution</Label>
+                <Input
+                  id="wa-api-url"
+                  placeholder="https://seu-evolution.up.railway.app"
+                  value={waEvolutionApiUrl}
+                  onChange={(e) => setWaEvolutionApiUrl(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Use o mesmo host do Manager (sem /manager). Ex.: painel em{" "}
+                  <code className="text-xs">evolution-api-…</code> → base da API costuma ser o mesmo domínio.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="wa-evo-token">Token da instância</Label>
+                <Input
+                  id="wa-evo-token"
+                  placeholder="UUID do Evolution Manager → Instância → Settings"
+                  value={waEvolutionToken}
+                  onChange={(e) => setWaEvolutionToken(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="wa-evo-phone">Número WhatsApp (referência, opcional)</Label>
+                <Input
+                  id="wa-evo-phone"
+                  placeholder="(51) 98935-4067"
+                  value={waEvolutionPhone}
+                  onChange={(e) => setWaEvolutionPhone(e.target.value)}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="zapi" className="space-y-4 py-2 mt-2">
+              <p className="text-xs text-muted-foreground">
+                <a href="https://z-api.io" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                  z-api.io
+                </a>{" "}
+                — credenciais da conta Z-API.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="wa-instance">Instance ID</Label>
+                <Input
+                  id="wa-instance"
+                  placeholder="Ex: 3B6C4A5D8E7F..."
+                  value={waInstanceId}
+                  onChange={(e) => setWaInstanceId(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="wa-token">Token</Label>
+                <Input
+                  id="wa-token"
+                  placeholder="Token da instância Z-API"
+                  value={waToken}
+                  onChange={(e) => setWaToken(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="wa-client-token">Client Token</Label>
+                <Input
+                  id="wa-client-token"
+                  placeholder="Client Token da conta Z-API"
+                  value={waClientToken}
+                  onChange={(e) => setWaClientToken(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="wa-phone">Seu número WhatsApp (opcional)</Label>
+                <Input
+                  id="wa-phone"
+                  placeholder="(11) 99999-9999"
+                  value={waPhone}
+                  onChange={(e) => setWaPhone(e.target.value)}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setWhatsAppModal(false)}>
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={handleConnectWhatsApp}
+              disabled={
+                waConnecting ||
+                (waMode === "evolution"
+                  ? !waEvolutionApiUrl.trim() || !waEvolutionToken.trim()
+                  : !waInstanceId.trim() || !waToken.trim() || !waClientToken.trim())
+              }
+            >
+              {waConnecting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Conectando...
+                </>
+              ) : (
+                "Conectar"
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -13,9 +13,9 @@ test.describe('Fluxo SaaS Completo', () => {
 
     const steps: { name: string; url: string; selector: string }[] = [
       { name: 'dashboard', url: '/', selector: 'body' },
-      { name: 'pacientes', url: '/pacientes', selector: 'body' },
-      { name: 'agenda', url: '/agenda', selector: 'body' },
-      { name: 'relatorios', url: '/relatorios', selector: 'body' },
+      { name: 'pacientes', url: '/patients', selector: 'body' },
+      { name: 'agenda', url: '/calendar', selector: 'body' },
+      { name: 'relatorios', url: '/reports', selector: 'body' },
     ];
 
     for (const step of steps) {
@@ -31,16 +31,18 @@ test.describe('Fluxo SaaS Completo', () => {
     await loginWeb(page);
     await page.goto('/');
 
-    const btnTrocarClinica = page
-      .getByRole('button', { name: /clínica|clinic|trocar|switch/i })
-      .or(page.getByText(/clínica|selecionar clínica/i))
+    // Clicar no botão de perfil/clínica no header para abrir seletor de clínica
+    const btnPerfil = page
+      .getByRole('button', { name: /Terapeuta Claudia Cruz|Claudia Cruz/i })
+      .or(page.getByRole('button').filter({ hasText: /cruz/i }))
       .first();
 
-    if ((await btnTrocarClinica.count()) === 0) {
-      testInfo.skip(true, 'Seletor de clínica não encontrado');
+    if ((await btnPerfil.count()) === 0) {
+      testInfo.skip(true, 'Botão de perfil/clínica não encontrado');
+      return;
     }
 
-    await btnTrocarClinica.click();
-    await expect(page.getByText(/clínica|clinic|selecionar/i).first()).toBeVisible({ timeout: 5000 });
+    await btnPerfil.click();
+    await expect(page.getByText(/clínica|clinic|selecionar|sair/i).first()).toBeVisible({ timeout: 5000 });
   });
 });

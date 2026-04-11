@@ -7,14 +7,14 @@ test.describe('Pacientes', () => {
   });
 
   test('listar pacientes', async ({ page }) => {
-    await page.goto('/pacientes');
+    await page.goto('/patients');
 
     const listaOuMensagem = page.getByText(/paciente|nenhum|lista|tabela/i);
     await expect(listaOuMensagem.first()).toBeVisible({ timeout: 15000 });
   });
 
   test('criar paciente', async ({ page }, testInfo) => {
-    await page.goto('/pacientes');
+    await page.goto('/patients');
 
     const btnNovo = page
       .getByRole('button', { name: /novo|adicionar|cadastrar/i })
@@ -38,7 +38,7 @@ test.describe('Pacientes', () => {
   });
 
   test('buscar pacientes', async ({ page }, testInfo) => {
-    await page.goto('/pacientes');
+    await page.goto('/patients');
 
     const search = page.locator(
       'input[type="search"], input[placeholder*="buscar"], input[placeholder*="pesquisar"]'

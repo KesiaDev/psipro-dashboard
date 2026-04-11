@@ -7,17 +7,17 @@ test.describe('Web Professionals', () => {
   });
 
   test('acessar página de profissionais', async ({ page }, testInfo) => {
-    await page.goto('/professionals');
+    await page.goto('/psychologists');
 
     const content = page.getByText(/profissional|psicólogo|equipe|team/i);
     if ((await content.count()) === 0) {
-      await page.goto('/profissionais');
+      await page.goto('/psychologists');
     }
     await expect(page.locator('body')).toBeVisible({ timeout: 10000 });
   });
 
   test('listar profissionais', async ({ page }, testInfo) => {
-    await page.goto('/professionals');
+    await page.goto('/psychologists');
 
     const lista = page.getByText(/profissional|psicólogo|nenhum|equipe/i);
     await expect(lista.first()).toBeVisible({ timeout: 15000 });

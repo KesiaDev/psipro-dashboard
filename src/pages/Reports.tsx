@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useReportsData } from "@/hooks/useReportsData";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { reportChartColor, REPORTS_REVENUE_LINE } from "@/constants/reportsChart";
 
 const Reports = () => {
   const { data, loading, error, refetch } = useReportsData();
@@ -124,7 +125,11 @@ const Reports = () => {
                       fontSize: "12px",
                     }}
                   />
-                  <Bar dataKey="sessoes" fill="hsl(42, 52%, 53%)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="sessoes" radius={[6, 6, 0, 0]}>
+                    {monthlyData.map((_, index) => (
+                      <Cell key={`month-bar-${index}`} fill={reportChartColor(index)} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -157,7 +162,13 @@ const Reports = () => {
                     }}
                     formatter={(value: number) => [`R$ ${value.toLocaleString()}`, "Valor"]}
                   />
-                  <Line type="monotone" dataKey="valor" stroke="hsl(42, 52%, 53%)" strokeWidth={2} dot={{ fill: "hsl(42, 52%, 53%)", r: 4 }} />
+                  <Line
+                    type="monotone"
+                    dataKey="valor"
+                    stroke={REPORTS_REVENUE_LINE}
+                    strokeWidth={2}
+                    dot={{ fill: REPORTS_REVENUE_LINE, r: 4 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -177,7 +188,7 @@ const Reports = () => {
                   <PieChart>
                     <Pie data={typeData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={4} dataKey="value">
                       {typeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color ?? "hsl(42, 52%, 53%)"} />
+                        <Cell key={`cell-${index}`} fill={entry.color ?? reportChartColor(index)} />
                       ))}
                     </Pie>
                     <Tooltip
@@ -212,13 +223,16 @@ const Reports = () => {
             <h3 className="font-heading text-base font-semibold text-foreground mb-5">Pacientes Mais Ativos</h3>
             {topPatients.length > 0 ? (
               <div className="space-y-4">
-                {topPatients.map((p) => (
+                {topPatients.map((p, i) => (
                   <div key={p.name} className="flex items-center gap-4">
                     <p className="text-sm font-medium text-foreground w-36 truncate">{p.name}</p>
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full gold-gradient transition-all duration-500"
-                        style={{ width: `${Math.min(100, p.percentage)}%` }}
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, p.percentage)}%`,
+                          backgroundColor: reportChartColor(i),
+                        }}
                       />
                     </div>
                     <span className="text-sm font-semibold text-foreground w-16 text-right">{p.sessions} sess.</span>

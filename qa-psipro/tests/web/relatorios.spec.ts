@@ -4,7 +4,7 @@ import { loginWeb } from '../../helpers/login-web';
 test.describe('Relatórios', () => {
   test.beforeEach(async ({ page }) => {
     await loginWeb(page);
-    await page.goto('/relatorios');
+    await page.goto('/reports');
   });
 
   test('visualizar relatório', async ({ page }) => {

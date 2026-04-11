@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, ApiError } from "@/services/api";
+import { REPORTS_CHART_PALETTE } from "@/constants/reportsChart";
 
 export interface ReportsData {
   monthlySessions: { month: string; sessoes: number }[];
@@ -21,7 +22,7 @@ export interface UseReportsDataState {
   refetch: () => Promise<void>;
 }
 
-const COLORS = ["hsl(42, 52%, 53%)", "hsl(210, 60%, 55%)", "hsl(350, 70%, 60%)", "hsl(0, 0%, 55%)"];
+const COLORS = [...REPORTS_CHART_PALETTE];
 
 export function useReportsData(): UseReportsDataState {
   const [data, setData] = useState<ReportsData | null>(null);

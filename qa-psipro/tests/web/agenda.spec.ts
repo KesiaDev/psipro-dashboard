@@ -4,7 +4,7 @@ import { loginWeb } from '../../helpers/login-web';
 test.describe('Agenda', () => {
   test.beforeEach(async ({ page }) => {
     await loginWeb(page);
-    await page.goto('/agenda');
+    await page.goto('/calendar');
   });
 
   test('visualizar calendário', async ({ page }) => {

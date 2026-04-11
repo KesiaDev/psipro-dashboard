@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 const CHAT_URL =
   import.meta.env.VITE_PSIPRO_CHAT_URL ||
-  "https://psipro-chat-production.up.railway.app";
+  "https://heart-chat-data.lovable.app";
 
 export default function Chat() {
   return (

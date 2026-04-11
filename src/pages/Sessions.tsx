@@ -71,9 +71,18 @@ const Sessions = () => {
     return matchesSearch && matchesFilter && matchesDate;
   });
 
+  // Agrupa por data (para referência interna)
   const grouped = filtered.reduce<Record<string, typeof filtered>>((acc, s) => {
     if (!acc[s.date]) acc[s.date] = [];
     acc[s.date].push(s);
+    return acc;
+  }, {});
+
+  // Agrupa por paciente para o card view
+  const byPatient = filtered.reduce<Record<string, { name: string; initials: string; sessions: typeof filtered }>>((acc, s) => {
+    const key = s.patient_id ?? s.patient;
+    if (!acc[key]) acc[key] = { name: s.patient, initials: s.initials, sessions: [] };
+    acc[key].sessions.push(s);
     return acc;
   }, {});
 
@@ -305,8 +314,8 @@ const Sessions = () => {
           </div>
         </div>
 
-        {/* ── Session list ── */}
-        {Object.keys(grouped).length === 0 ? (
+        {/* ── Patient cards grid ── */}
+        {Object.keys(byPatient).length === 0 ? (
           <div className="card-soft p-16 text-center space-y-3">
             <div className="h-12 w-12 rounded-2xl bg-muted mx-auto flex items-center justify-center">
               <Calendar className="h-6 w-6 text-muted-foreground" />
@@ -315,107 +324,150 @@ const Sessions = () => {
             <p className="text-xs text-muted-foreground">Tente ajustar os filtros ou criar uma nova sessão.</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {Object.entries(grouped).map(([date, dateSessions]) => (
-              <div key={date} className="animate-fade-in">
-                {/* Date divider */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Calendar className="h-3.5 w-3.5 text-primary" />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {Object.entries(byPatient).map(([key, { name, initials, sessions: patSessions }]) => {
+              // Ordena sessões do paciente: mais recentes primeiro
+              const sorted = [...patSessions].sort((a, b) =>
+                (b.scheduled_at ?? b.date) > (a.scheduled_at ?? a.date) ? 1 : -1
+              );
+              const latest = sorted[0];
+              const latestCfg = STATUS[latest.status] ?? STATUS.scheduled;
+              const LatestIcon = latestCfg.icon;
+              const hasNotes = patSessions.some((s) => s.notes);
+              const completedCount = patSessions.filter((s) => s.status === "completed").length;
+
+              return (
+                <div
+                  key={key}
+                  className="group card-soft flex flex-col overflow-hidden hover:border-primary/30 hover:shadow-lg transition-all duration-200 animate-fade-in"
+                >
+                  {/* Card header */}
+                  <div className="p-4 flex items-center gap-3 border-b border-border/50">
+                    <Avatar className="h-11 w-11 shrink-0">
+                      <AvatarFallback className="gold-gradient text-primary-foreground text-xs font-bold">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                        {name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-muted-foreground">
+                          {patSessions.length} sess{patSessions.length !== 1 ? "ões" : "ão"}
+                        </span>
+                        {completedCount > 0 && (
+                          <>
+                            <span className="text-muted-foreground/40">·</span>
+                            <span className="text-xs text-emerald-400 font-medium">{completedCount} concluída{completedCount !== 1 ? "s" : ""}</span>
+                          </>
+                        )}
+                        {hasNotes && (
+                          <>
+                            <span className="text-muted-foreground/40">·</span>
+                            <span className="inline-flex items-center gap-0.5 text-xs text-primary">
+                              <FileText className="h-2.5 w-2.5" /> Notas
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {/* Status da sessão mais recente */}
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border shrink-0 ${latestCfg.pill}`}>
+                      <LatestIcon className="h-2.5 w-2.5" />
+                      {latestCfg.label}
+                    </span>
                   </div>
-                  <h3 className="font-heading text-sm font-semibold text-foreground">{date}</h3>
-                  <div className="h-px flex-1 bg-border" />
-                  <span className="text-xs text-muted-foreground shrink-0">{dateSessions.length} sess{dateSessions.length !== 1 ? "ões" : "ão"}</span>
-                </div>
 
-                <div className="space-y-2">
-                  {dateSessions.map((session) => {
-                    const cfg = STATUS[session.status] ?? STATUS.scheduled;
-                    const StatusIcon = cfg.icon;
-                    return (
-                      <div
-                        key={session.id}
-                        onClick={() => navigate(`/sessions/${session.id}`, { state: { sessionFromList: session } })}
-                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/sessions/${session.id}`, { state: { sessionFromList: session } }); } }}
-                        tabIndex={0}
-                        role="button"
-                        aria-label={`Sessão de ${session.patient}, ${session.date}`}
-                        className="group card-soft p-4 flex items-center gap-4 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary"
-                      >
-                        {/* Avatar */}
-                        <Avatar className="h-11 w-11 shrink-0">
-                          <AvatarFallback className="gold-gradient text-primary-foreground text-xs font-bold">
-                            {session.initials}
-                          </AvatarFallback>
-                        </Avatar>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-                          {/* Patient + type */}
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                              {session.patient}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">{session.type || "—"}</p>
+                  {/* Sessions list inside card */}
+                  <div className="flex-1 divide-y divide-border/40">
+                    {sorted.map((session) => {
+                      const cfg = STATUS[session.status] ?? STATUS.scheduled;
+                      const SIcon = cfg.icon;
+                      return (
+                        <div
+                          key={session.id}
+                          onClick={() => navigate(`/sessions/${session.id}`, { state: { sessionFromList: session } })}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/sessions/${session.id}`, { state: { sessionFromList: session } }); } }}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`Sessão de ${session.patient}, ${session.date}`}
+                          className="group/row px-4 py-3 flex items-center gap-3 hover:bg-muted/40 transition-colors cursor-pointer focus:outline-none"
+                        >
+                          {/* Date badge */}
+                          <div className="h-9 w-9 rounded-lg bg-muted flex flex-col items-center justify-center shrink-0 text-center">
+                            <span className="text-[10px] font-semibold text-muted-foreground leading-none">
+                              {session.date.split(" ")[1]?.replace(",", "") ?? ""}
+                            </span>
+                            <span className="text-sm font-bold text-foreground leading-tight">
+                              {session.date.split(" ")[0] ?? ""}
+                            </span>
                           </div>
 
-                          {/* Time + duration */}
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Clock className="h-3.5 w-3.5 shrink-0" />
-                            <span className="text-sm">{session.time}</span>
-                            <span className="text-xs">·</span>
-                            <TimerIcon className="h-3.5 w-3.5 shrink-0" />
-                            <span className="text-xs">{session.duration}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3 shrink-0" />
+                              <span>{session.time}</span>
+                              <span className="text-muted-foreground/40">·</span>
+                              <TimerIcon className="h-3 w-3 shrink-0" />
+                              <span>{session.duration}</span>
+                              {session.type && (
+                                <>
+                                  <span className="text-muted-foreground/40">·</span>
+                                  <span className="truncate">{session.type}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
 
-                          {/* Status + notes */}
-                          <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${cfg.pill}`}>
-                              <StatusIcon className="h-3 w-3" />
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${cfg.pill}`}>
+                              <SIcon className="h-2.5 w-2.5" />
                               {cfg.label}
                             </span>
-                            {session.notes && (
-                              <span className="inline-flex items-center gap-1 text-[11px] text-primary font-medium">
-                                <FileText className="h-3 w-3" />
-                                Notas
-                              </span>
-                            )}
+
+                            {/* Session actions */}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 opacity-0 group-hover/row:opacity-100 transition-opacity"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreVertical className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingSession(session); }}>
+                                  <Pencil className="h-4 w-4 mr-2" /> Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={(e) => { e.stopPropagation(); setDeletingSession(session); }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
+                      );
+                    })}
+                  </div>
 
-                        {/* Arrow hint on hover */}
-                        <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mr-1" />
-
-                        {/* Actions */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingSession(session); }}>
-                              <Pencil className="h-4 w-4 mr-2" /> Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={(e) => { e.stopPropagation(); setDeletingSession(session); }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    );
-                  })}
+                  {/* Card footer */}
+                  <div className="px-4 py-3 border-t border-border/50 bg-muted/20">
+                    <button
+                      onClick={() => navigate(`/sessions/${sorted[0].id}`, { state: { sessionFromList: sorted[0] } })}
+                      className="text-xs text-primary hover:underline font-medium flex items-center gap-1"
+                    >
+                      Ver detalhes <ChevronRight className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

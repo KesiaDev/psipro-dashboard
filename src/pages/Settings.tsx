@@ -96,6 +96,7 @@ const Settings = ({ defaultTab }: SettingsProps) => {
     () => (import.meta.env.VITE_EVOLUTION_API_URL as string | undefined)?.trim() || "",
   );
   const [waEvolutionToken, setWaEvolutionToken] = useState("");
+  const [waEvolutionInstanceName, setWaEvolutionInstanceName] = useState("");
   const [waEvolutionPhone, setWaEvolutionPhone] = useState("");
   const [waInstanceId, setWaInstanceId] = useState("");
   const [waToken, setWaToken] = useState("");
@@ -111,6 +112,7 @@ const Settings = ({ defaultTab }: SettingsProps) => {
             provider: "evolution",
             evolutionApiUrl: waEvolutionApiUrl.trim(),
             evolutionInstanceToken: waEvolutionToken.trim(),
+            evolutionInstanceName: waEvolutionInstanceName.trim() || undefined,
             phoneNumber: waEvolutionPhone.trim() || undefined,
           })
         : await connectWhatsApp({
@@ -735,6 +737,18 @@ const Settings = ({ defaultTab }: SettingsProps) => {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="wa-evo-instance-name">Nome da instância no Evolution</Label>
+                <Input
+                  id="wa-evo-instance-name"
+                  placeholder="Ex.: TerapeutaClaudiaCruz"
+                  value={waEvolutionInstanceName}
+                  onChange={(e) => setWaEvolutionInstanceName(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  O mesmo nome técnico que aparece no Manager (lista de instâncias). Obrigatório para validar o token.
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="wa-evo-phone">Número WhatsApp (referência, opcional)</Label>
                 <Input
                   id="wa-evo-phone"
@@ -801,7 +815,7 @@ const Settings = ({ defaultTab }: SettingsProps) => {
               disabled={
                 waConnecting ||
                 (waMode === "evolution"
-                  ? !waEvolutionApiUrl.trim() || !waEvolutionToken.trim()
+                  ? !waEvolutionApiUrl.trim() || !waEvolutionToken.trim() || !waEvolutionInstanceName.trim()
                   : !waInstanceId.trim() || !waToken.trim() || !waClientToken.trim())
               }
             >

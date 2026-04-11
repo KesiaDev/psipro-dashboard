@@ -80,6 +80,8 @@ export interface WhatsAppConnectParams {
   provider?: "zapi" | "evolution";
   evolutionApiUrl?: string;
   evolutionInstanceToken?: string;
+  /** Nome técnico no Evolution Manager (ex.: TerapeutaClaudiaCruz) */
+  evolutionInstanceName?: string;
   instanceId?: string;
   token?: string;
   clientToken?: string;

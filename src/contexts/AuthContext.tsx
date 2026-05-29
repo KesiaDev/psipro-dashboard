@@ -120,13 +120,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     metadata: { first_name: string; last_name: string; crp: string; professionalType?: string }
   ) => {
     try {
+      const fullName = `${metadata.first_name} ${metadata.last_name}`.trim();
       await api.post("/auth/register", {
         email,
         password,
-        firstName: metadata.first_name,
-        lastName: metadata.last_name,
-        crp: metadata.crp,
-        professionalType: metadata.professionalType ?? "Psicólogo",
+        fullName,
+        professionalType: metadata.professionalType ?? "psychologist",
       });
       return { error: null };
     } catch (err) {

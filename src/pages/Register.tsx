@@ -9,13 +9,20 @@ import { PsiProLogo } from "@/components/PsiProLogo";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-const PROFESSIONAL_TYPES = ["Psicólogo", "Terapeuta", "Psicanalista", "Conselheiro", "Coach", "Outro"] as const;
+const PROFESSIONAL_TYPES = [
+  { label: "Psicólogo", value: "psychologist" },
+  { label: "Terapeuta", value: "therapist" },
+  { label: "Psicanalista", value: "psychoanalyst" },
+  { label: "Conselheiro", value: "counselor" },
+  { label: "Coach", value: "coach" },
+  { label: "Outro", value: "other" },
+] as const;
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [professionalType, setProfessionalType] = useState<string>(PROFESSIONAL_TYPES[0]);
+  const [professionalType, setProfessionalType] = useState<string>("psychologist");
   const [crp, setCrp] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -71,9 +78,9 @@ const Register = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PROFESSIONAL_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
+                  {PROFESSIONAL_TYPES.map(({ label, value }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
                     </SelectItem>
                   ))}
                 </SelectContent>
